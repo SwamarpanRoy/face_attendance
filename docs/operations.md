@@ -72,7 +72,7 @@ unpacks `data.zip` next to `CROPS_DIR`. Stop the server first; afterwards run
 |---|---|
 | Device shows **server: offline** | `curl http://<SERVER_HOST>:8000/healthz` from the Pi; WiFi (`nmcli -t -f active,ssid dev wifi`); firewall on the server for port 8000; token revoked? (Devices page) |
 | **DEVICE REVOKED** on idle screen | admin revoked it; *Devices → New token*, update `device.toml`, restart |
-| "This section has not been synced" | device not assigned to the section, or no templates yet: Devices → sections, then *Settings → Sync now* |
+| "No faces enrolled for this section yet" | nobody in the section has a face template: enrol students (device *Enrol* or bulk import), then *Settings → Sync now*. A section missing from the picker is not assigned: Devices → sections |
 | Many "Not recognised" | not calibrated (idle screen warning) → run calibration; lighting; `min_face_width_px`/distance; check `device.log` scores |
 | Clock warning | Pi has no RTC; it syncs via NTP once online (`timedatectl`); records made before that carry `clock_synced=false` and the server stamps `received_at` |
 | App not on the touch screen after boot | `cat ~/.local/state/attendance/wrapper.log`; `ls ~/.config/autostart`; `wlr-randr` for the display; `--selftest` |

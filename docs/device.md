@@ -16,7 +16,7 @@ State: `~/.local/state/attendance/device.db` (SQLite) and `device.log` (rotating
 | Screen | Who | What |
 |---|---|---|
 | **Idle** | anyone | device name, clock, server online/offline, queued records, last sync, WiFi SSID/IP, warnings ("Not calibrated", "Clock not synced"), **Start session**, **Resume session** (after a crash/restart mid-class), Enrol, Settings |
-| **Start session** | teacher PIN | course → section → period from the **local catalog**; blocked with "This section has not been synced to this device yet" when no templates are cached for it; if online, a quick template refresh runs first |
+| **Start session** | teacher PIN | course → section → period from the **local catalog**; blocked with "No faces enrolled for this section yet" when no templates are cached for it; if online, a quick template refresh runs first |
 | **Live** | – | camera preview with face boxes, banner (green *Face matched – Name (USN)*, amber *Already marked*, red *Not recognised – try again*, neutral gate hints like *Move closer*), present / total, last 5 marked, stage latencies, **End session** (teacher PIN) |
 | **Enrol** | teacher PIN | pick student from the roster with the number pad → consent notice → *I consent* → 3 captures → upload → templates re-synced |
 | **Settings** | admin PIN | server URL, device id, app and model version, threshold/margin (read-only, flagged when provisional), liveness, cached templates, queue, last sync, network, clock, **Sync now**, **Test camera**, **Restart app** |

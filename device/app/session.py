@@ -20,9 +20,9 @@ from device.app.store import DeviceStore
 
 log = logging.getLogger(__name__)
 
-NO_TEMPLATES_MESSAGE = (
-    "This section has not been synced to this device yet. Connect to WiFi once and use Sync now."
-)
+# Sections in the picker come from the synced catalog, so "no templates" means nobody in
+# the section has an enrolled face yet (a session would only mark everyone absent).
+NO_TEMPLATES_MESSAGE = "No faces enrolled for this section yet. Use Enrol first, then try again."
 
 
 @dataclass(frozen=True)
