@@ -7,6 +7,7 @@
 <article>
   <h4>Register a device</h4>
   <form method="post" action="/admin/devices" class="filters">
+    {{ csrf() }}
     {{ input('name', 'Device name', values.get('name'), required=true, errors=errors, placeholder='pi-01') }}
     <button type="submit">Register and show token</button>
   </form>
