@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/vendor/pico.min.css">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/vendor/htmx.min.js" defer></script>
+</head>
+<body hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
+<header class="container">
+  <nav>
+    <ul><li><a href="/admin" class="brand"><strong>{{ app_name }}</strong></a></li></ul>
+    {% if user %}
+    <ul class="mainnav">
+      <li><a href="/admin">Dashboard</a></li>
+      <li><a href="/admin/sessions">Sessions</a></li>
+      <li><a href="/admin/students">Students</a></li>
+      <li><a href="/admin/reports">Reports</a></li>
+      <li><a href="/admin/courses">Courses</a></li>
+      <li><a href="/admin/sections">Sections</a></li>
+      <li><a href="/admin/periods">Periods</a></li>
+      {% if is_admin %}
+      <li><a href="/admin/enrolment">Enrolment</a></li>
+      <li><a href="/admin/devices">Devices</a></li>
+      <li><a href="/admin/faculty">Faculty</a></li>
+      <li><a href="/admin/audit">Audit</a></li>
+      {% endif %}
+      <li>
+        <details class="dropdown">
+          <summary>{{ user.name }}</summary>
+          <ul dir="rtl">
+            <li><a href="/admin/me">My account</a></li>
+            <li>
+              <form method="post" action="/admin/logout" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="linklike">Log out</button>
+              </form>
+            </li>
+          </ul>
+        </details>
+      </li>
+    </ul>
+    {% endif %}
+  </nav>
+</header>
+<main class="container">
+  {% if flash %}<div class="flash flash-{{ flash.kind }}" role="status">{{ flash.message }}</div>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="container muted"><small>{{ app_name }} · <a href="/docs">API docs</a></small></footer>
+</body>
+</html>

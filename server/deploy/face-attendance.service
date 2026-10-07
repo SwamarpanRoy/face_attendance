@@ -1,0 +1,26 @@
+# systemd unit for the attendance server on Ubuntu/Debian.
+#   sudo cp server/deploy/face-attendance.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now face-attendance
+# Assumes the repo is checked out at /opt/face-attendance with a .venv and a .env
+# (scripts/setup_server.sh does this). Adjust User/WorkingDirectory if different.
+[Unit]
+Description=Face attendance server (FastAPI)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=attendance
+Group=attendance
+WorkingDirectory=/opt/face-attendance
+EnvironmentFile=/opt/face-attendance/.env
+ExecStart=/opt/face-attendance/.venv/bin/uvicorn server.app.main:app --host 0.0.0.0 --port 8000 --workers 2 --proxy-headers
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/opt/face-attendance/data /opt/face-attendance/calibration /opt/face-attendance/backups
+
+[Install]
+WantedBy=multi-user.target

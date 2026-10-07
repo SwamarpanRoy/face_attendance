@@ -1,0 +1,31 @@
+# PostgreSQL 16 for development on the laptop, and for the office computer if it uses
+# Docker. Credentials come from the repo-root .env, so run it from the repo root:
+#
+#   docker compose --env-file .env -f server/deploy/docker-compose.yml up -d
+#
+# (VS Code task: "DB: start Postgres (docker compose)".) Data lives in a named volume
+# and survives `down`; `down -v` deletes it. Backups are covered in docs/operations.md.
+
+services:
+  db:
+    image: postgres:16
+    container_name: attendance-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-attendance}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-attendance}
+    ports:
+      # Loopback only: the FastAPI app runs on the same machine. Change to "5432:5432"
+      # only if another machine must reach the database directly.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - attendance-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-attendance} -d ${POSTGRES_DB:-attendance}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  attendance-pgdata:

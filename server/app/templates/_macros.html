@@ -1,0 +1,30 @@
+{% macro input(name, label, value='', type='text', required=false, errors={}, placeholder='', help='', autocomplete='') %}
+<label>{{ label }}
+  <input type="{{ type }}" name="{{ name }}" value="{{ '' if value is none else value }}"
+         {% if required %}required{% endif %}
+         {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+         {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+         {% if errors.get(name) %}aria-invalid="true"{% endif %}>
+  {% if errors.get(name) %}<small class="error">{{ errors[name] }}</small>{% elif help %}<small>{{ help }}</small>{% endif %}
+</label>
+{% endmacro %}
+
+{% macro select(name, label, options, selected=none, errors={}, blank='') %}
+<label>{{ label }}
+  <select name="{{ name }}" {% if errors.get(name) %}aria-invalid="true"{% endif %}>
+    {% if blank %}<option value="">{{ blank }}</option>{% endif %}
+    {% for val, text in options %}
+    <option value="{{ val }}" {% if selected is not none and val|string == selected|string %}selected{% endif %}>{{ text }}</option>
+    {% endfor %}
+  </select>
+  {% if errors.get(name) %}<small class="error">{{ errors[name] }}</small>{% endif %}
+</label>
+{% endmacro %}
+
+{% macro checkbox(name, label, checked=false) %}
+<label><input type="checkbox" name="{{ name }}" {% if checked %}checked{% endif %}> {{ label }}</label>
+{% endmacro %}
+
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endmacro %}
+
+{% macro chip(text, kind='') %}<span class="chip {{ kind }}">{{ text }}</span>{% endmacro %}

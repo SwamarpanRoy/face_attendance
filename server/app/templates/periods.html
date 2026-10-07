@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import input, csrf with context %}
+{% block title %}Periods · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Timetable periods</h1>
+<p class="muted">The device asks for course, section and period when a session starts. Periods are campus-wide.</p>
+<table>
+  <thead><tr><th>#</th><th>Name</th><th>Start</th><th>End</th><th></th></tr></thead>
+  <tbody>
+  {% for p in periods %}
+    <tr>
+      <td>{{ p.ordinal }}</td>
+      <td>{{ p.name }}</td>
+      <td>{{ p.start_time.strftime('%H:%M') }}</td>
+      <td>{{ p.end_time.strftime('%H:%M') }}</td>
+      <td class="right">
+        {% if is_admin %}
+        <form method="post" action="/admin/periods/{{ p.id }}/delete" class="inline" onsubmit="return confirm('Remove {{ p.name }}?')">
+          {{ csrf() }}<button type="submit" class="secondary outline small">Remove</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5" class="muted">No periods defined yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% if is_admin %}
+<article>
+  <h4>Add a period</h4>
+  {% if errors.get('time') %}<p class="error">{{ errors.time }}</p>{% endif %}
+  <form method="post" action="/admin/periods" class="grid">
+    {{ csrf() }}
+    {{ input('ordinal', 'Number', type='number', required=true, errors=errors) }}
+    {{ input('name', 'Name', required=true, errors=errors, placeholder='Period 1') }}
+    {{ input('start_time', 'Start', type='time', required=true, errors=errors) }}
+    {{ input('end_time', 'End', type='time', required=true, errors=errors) }}
+    <label>&nbsp;<button type="submit">Add</button></label>
+  </form>
+</article>
+{% endif %}
+{% endblock %}

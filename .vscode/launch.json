@@ -1,0 +1,53 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Server (local)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["server.app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "jinja": true,
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Device simulator",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "device.app.main",
+      "args": ["--sim"],
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true,
+      "console": "integratedTerminal"
+    },
+    {
+      // The device app listens for debugpy on 127.0.0.1:5678 on the Pi only when
+      // started with --debug. ~/.ssh/config forwards laptop:5678 -> pi:5678
+      // (see docs/wireless_dev.md), so we attach to localhost.
+      "name": "Attach to Pi device app",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": { "host": "127.0.0.1", "port": 5678 },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/home/${config:attendance.piUser}/face-attendance"
+        }
+      ],
+      "justMyCode": true
+    },
+    {
+      "name": "Tests: current file",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-x", "-q"],
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    }
+  ]
+}

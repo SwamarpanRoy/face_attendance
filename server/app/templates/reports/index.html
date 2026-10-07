@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Reports · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Reports</h1>
+  <div class="actions">
+    <a role="button" class="secondary" href="/admin/reports/export?fmt=csv&view={{ view }}&course={{ course_id or '' }}&section={{ section_id or '' }}&start={{ start }}&end={{ end }}&threshold={{ threshold }}">CSV</a>
+    <a role="button" class="secondary" href="/admin/reports/export?fmt=xlsx&view={{ view }}&course={{ course_id or '' }}&section={{ section_id or '' }}&start={{ start }}&end={{ end }}&threshold={{ threshold }}">XLSX</a>
+  </div>
+</div>
+
+<form method="get" action="/admin/reports" class="filters">
+  <select name="view">
+    <option value="matrix" {% if view == 'matrix' %}selected{% endif %}>All students</option>
+    <option value="shortage" {% if view == 'shortage' %}selected{% endif %}>Shortage list</option>
+  </select>
+  <select name="course">
+    <option value="">All courses</option>
+    {% for c in courses %}<option value="{{ c.id }}" {% if course_id == c.id %}selected{% endif %}>{{ c.code }} {{ c.name }}</option>{% endfor %}
+  </select>
+  <select name="section">
+    <option value="">All sections</option>
+    {% for s in sections %}<option value="{{ s.id }}" {% if section_id == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+  </select>
+  <input type="date" name="start" value="{{ start }}">
+  <input type="date" name="end" value="{{ end }}">
+  <input type="number" name="threshold" value="{{ threshold }}" min="0" max="100" step="1" title="shortage threshold %" style="width:6rem">
+  <button type="submit" class="secondary">Apply</button>
+</form>
+
+<p class="muted">Percentage = attended (present + late) ÷ (sessions held − excused), over ended sessions from {{ start }} to {{ end }}.
+  {% if view == 'shortage' %}Showing students below {{ threshold|int }}%.{% else %}{{ shortage_count }} student-course rows are below {{ threshold|int }}%.{% endif %}</p>
+
+<table>
+  <thead><tr><th>Course</th><th>USN</th><th>Name</th><th>Held</th><th>Attended</th><th>Late</th><th>Excused</th><th>%</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr class="{{ 'short' if r.percentage is not none and r.percentage < threshold else '' }}">
+      <td>{{ r.course_code }}</td>
+      <td><a href="/admin/students/{{ r.student_id }}">{{ r.usn }}</a></td>
+      <td>{{ r.name }}</td>
+      <td>{{ r.held }}</td><td>{{ r.attended }}</td><td>{{ r.late }}</td><td>{{ r.excused }}</td>
+      <td>{{ '%.0f%%'|format(r.percentage) if r.percentage is not none else '–' }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="8" class="muted">No ended sessions in this range.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

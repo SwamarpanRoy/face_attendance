@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Sections · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Sections</h1>
+  {% if is_admin %}<a href="/admin/sections/new" role="button">Add section</a>{% endif %}
+</div>
+<table>
+  <thead><tr><th>Section</th><th>Dept</th><th>Sem</th><th>Active students</th></tr></thead>
+  <tbody>
+  {% for section, students in rows %}
+    <tr>
+      <td><a href="/admin/sections/{{ section.id }}">{{ section.name }}</a></td>
+      <td>{{ section.department }}</td>
+      <td>{{ section.semester }}</td>
+      <td>{{ students }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4" class="muted">No sections yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

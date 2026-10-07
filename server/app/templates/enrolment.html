@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Enrolment · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Enrolment</h1>
+<div class="stats">
+  <article><small>Active students</small><strong>{{ counts.students }}</strong></article>
+  <article><small>With consent</small><strong>{{ counts.consented }}</strong></article>
+  <article><small>Enrolled (have templates)</small><strong>{{ counts.enrolled }}</strong></article>
+  <article><small>Templates</small><strong>{{ counts.templates }}</strong></article>
+</div>
+
+<div class="grid">
+  <article>
+    <h3>Missing consent ({{ missing_consent|length }})</h3>
+    <p class="muted">Cannot be enrolled until consent is recorded on the device or via the consent CSV.</p>
+    <ul>
+      {% for s in missing_consent[:100] %}<li><a href="/admin/students/{{ s.id }}">{{ s.usn }}</a> {{ s.name }} <span class="muted">{{ s.section.name if s.section else '' }}</span></li>{% else %}<li class="muted">None</li>{% endfor %}
+    </ul>
+  </article>
+  <article>
+    <h3>Consented but not enrolled ({{ missing_templates|length }})</h3>
+    <p class="muted">Enrol them on a device or import their ID-card photo.</p>
+    <ul>
+      {% for s in missing_templates[:100] %}<li><a href="/admin/students/{{ s.id }}">{{ s.usn }}</a> {{ s.name }} <span class="muted">{{ s.section.name if s.section else '' }}</span></li>{% else %}<li class="muted">None</li>{% endfor %}
+    </ul>
+  </article>
+</div>
+
+<article>
+  <h3>Bulk imports</h3>
+  <p class="muted">Run on the server: <code>python tools/enroll_bulk.py --photos idcards/ --consents consents.csv --report report.csv</code>. The report lists every rejected photo with its reason.</p>
+  {% if imports %}
+  <table>
+    <thead><tr><th>When</th><th>Accepted</th><th>Rejected</th><th>Photos</th><th>Report</th></tr></thead>
+    <tbody>
+    {% for i in imports %}
+      <tr>
+        <td>{{ i.created_at|local }}</td>
+        <td>{{ i.after.accepted }}</td>
+        <td>{{ i.after.rejected }}</td>
+        <td><code>{{ i.after.photos }}</code></td>
+        <td><code>{{ i.after.report }}</code></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No bulk imports yet.</p>
+  {% endif %}
+</article>
+{% endblock %}

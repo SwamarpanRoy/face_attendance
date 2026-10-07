@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Device token · {{ app_name }}{% endblock %}
+{% block content %}
+<article>
+  <h1>Token for {{ device.name }}</h1>
+  <p><strong>Copy it now.</strong> It is shown once and stored only as a hash.</p>
+  <pre><code id="token">{{ token }}</code></pre>
+  <p>On the device, in <code>~/.config/attendance/device.toml</code>:</p>
+  <pre><code>[server]
+url = "http://&lt;SERVER_HOST&gt;:8000"
+token = "{{ token }}"</code></pre>
+  <p>Then assign the sections it should cache and run <code>python -m device.app.main --sync</code> on the device.</p>
+  <a href="/admin/devices" role="button">Back to devices</a>
+</article>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import input, select, checkbox, csrf with context %}
+{% block title %}{{ 'Edit' if student else 'Add' }} student · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>{{ 'Edit ' ~ student.usn if student else 'Add student' }}</h1>
+<form method="post" action="{{ '/admin/students/' ~ student.id if student else '/admin/students' }}" class="narrow">
+  {{ csrf() }}
+  {{ input('usn', 'USN', values.get('usn'), required=true, errors=errors, placeholder='1BM22EC001') }}
+  {{ input('name', 'Name', values.get('name'), required=true, errors=errors) }}
+  <div class="grid">
+    {{ input('department', 'Department', values.get('department'), required=true, errors=errors, placeholder='ECE') }}
+    {{ input('semester', 'Semester', values.get('semester'), type='number', required=true, errors=errors) }}
+  </div>
+  {{ select('section_id', 'Section', sections|map(attribute='id')|zip(sections|map(attribute='name'))|list, selected=values.get('section_id'), errors=errors, blank='No section yet') }}
+  {% if student %}{{ checkbox('active', 'Active', values.get('active', true)) }}{% endif %}
+  <div class="actions">
+    <button type="submit">{{ 'Save' if student else 'Add student' }}</button>
+    <a href="{{ '/admin/students/' ~ student.id if student else '/admin/students' }}" role="button" class="secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}

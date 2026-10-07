@@ -1,0 +1,11 @@
+<form class="edit-form" hx-post="/admin/sessions/{{ session.id }}/students/{{ student.id }}" hx-target="#grid" hx-swap="innerHTML">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <strong>{{ student.usn }}</strong>
+  <select name="status">
+    {% for s in statuses %}<option value="{{ s }}" {% if record and record.status.value == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  <input type="text" name="reason" placeholder="Reason (required)" required autofocus>
+  {% if error %}<small class="error">{{ error }}</small>{% endif %}
+  <button type="submit" class="small">Save</button>
+  <button type="button" class="small secondary" onclick="this.closest('form').remove()">Cancel</button>
+</form>

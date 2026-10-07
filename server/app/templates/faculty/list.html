@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import chip %}
+{% block title %}Faculty · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Faculty accounts</h1>
+  <a href="/admin/faculty/new" role="button">Add account</a>
+</div>
+<table>
+  <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Device PIN</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for m in members %}
+    <tr class="{{ '' if m.active else 'inactive' }}">
+      <td><a href="/admin/faculty/{{ m.id }}/edit">{{ m.name }}</a></td>
+      <td>{{ m.email }}</td>
+      <td>{{ chip(m.role.value, 'ok' if m.role.value == 'admin' else '') }}</td>
+      <td>{% if m.pin_hash %}{{ chip('set', 'ok') }}{% else %}{{ chip('not set', 'warn') }}{% endif %}</td>
+      <td>{% if m.active %}active{% else %}{{ chip('inactive') }}{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

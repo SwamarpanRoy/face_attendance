@@ -1,0 +1,12 @@
+# Normalise to LF in the repo. Shell scripts run on the Pi and break on CRLF;
+# PowerShell prefers CRLF on Windows.
+* text=auto eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.toml text eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.onnx binary
+*.xlsx binary

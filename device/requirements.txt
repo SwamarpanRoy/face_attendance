@@ -1,0 +1,13 @@
+# Raspberry Pi device app. Installed into a venv created with --system-site-packages.
+#
+# DO NOT add numpy or opencv here: they come from apt (python3-numpy, python3-opencv)
+# and pip builds break the picamera2 ABI. picamera2, libcamera and PyQt5 are apt too.
+#
+# onnxruntime is pinned to a release with aarch64 wheels for Python 3.13 (Raspberry Pi
+# OS Trixie, numpy 2.2 from apt) and 3.11 (Bookworm, numpy 1.24). Re-verify on the Pi (M1).
+onnxruntime==1.20.1
+pydantic==2.13.5
+pydantic-settings==2.15.0
+httpx==0.28.1
+debugpy==1.8.22
+argon2-cffi==25.1.0

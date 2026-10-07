@@ -1,0 +1,108 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "face-attendance"
+description = "Portable face-recognition attendance device (Raspberry Pi 4) with a FastAPI server and HTMX admin UI."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "BMSCE ECE final-year team" }]
+dynamic = ["version"]
+# Runtime dependencies are pinned per component (they differ between the Pi,
+# the server and the laptop): see requirements-dev.txt, server/requirements.txt,
+# device/requirements.txt and device/requirements-sim.txt.
+dependencies = []
+
+[tool.setuptools.dynamic]
+version = { attr = "common.version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["common*", "device*", "server*"]
+exclude = ["tests*"]
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+# The Pi runs Python 3.11; the laptop may run newer. Target 3.11 so nothing
+# newer slips into shared code.
+target-version = "py311"
+line-length = 100
+src = ["."]
+extend-exclude = ["models", "data", "backups"]
+
+[tool.ruff.lint]
+allowed-confusables = ["–", "…", "·"]  # device UI strings use the spec's en dash
+select = [
+  "E", "W",   # pycodestyle
+  "F",        # pyflakes
+  "I",        # isort
+  "B",        # bugbear
+  "UP",       # pyupgrade
+  "N",        # pep8-naming
+  "SIM",      # simplify
+  "RUF",      # ruff-specific
+  "D",        # pydocstyle: modules and public functions explain *why*
+  "ANN",      # type annotations everywhere
+  "C4",       # comprehensions
+  "PTH",      # pathlib over os.path
+  "T20",      # no stray print() in library code
+  "ISC",      # implicit string concat
+  "PIE",
+  "RET",
+  "PERF",
+]
+ignore = [
+  "ANN401",   # Any is sometimes the honest type at I/O boundaries
+  # Docstrings: every module must say why it exists (D100); classes, functions
+  # and methods get one when it adds something, not as a ritual.
+  "D101", "D102", "D103", "D104", "D105", "D106", "D107",
+  "ISC001",   # conflicts with the formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "ANN", "T20"]
+"tools/**" = ["T20"]                 # command-line tools print by design
+"scripts/**" = ["T20"]
+"server/alembic/**" = ["D", "ANN", "N999"]
+"**/__init__.py" = ["D104"]
+"conftest.py" = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["common", "device", "server", "tools"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+  "integration: needs a reachable test PostgreSQL (TEST_DATABASE_URL); run with --run-integration",
+  "pi: needs Raspberry Pi hardware (camera/display); run with --run-pi",
+]
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.11"
+files = ["common", "server"]
+strict = true
+warn_unreachable = true
+pretty = true
+plugins = ["pydantic.mypy"]
+exclude = ["server/alembic/versions/"]
+
+[[tool.mypy.overrides]]
+module = [
+  "cv2", "cv2.*",
+  "onnxruntime", "onnxruntime.*",
+  "picamera2", "picamera2.*",
+  "libcamera", "libcamera.*",
+  "PyQt5", "PyQt5.*",
+]
+ignore_missing_imports = true

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_macros.html" import chip, csrf with context %}
+{% block title %}{{ session.course.code }} {{ session.section.name }} · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <hgroup>
+    <h1>{{ session.course.code }} {{ session.course.name }} · {{ session.section.name }}</h1>
+    <p>{{ session.started_at|local }}{% if session.ended_at %} → {{ session.ended_at|localtime }}{% endif %}
+      · {{ session.faculty.name }}{% if session.period %} · {{ session.period.name }}{% endif %}
+      {% if session.device %} · device {{ session.device.name }}{% endif %}
+      · {{ chip(session.status.value, 'live' if session.status.value == 'live' else '') }}
+      {% if not session.clock_synced %} {{ chip('device clock not synced', 'warn') }}{% endif %}</p>
+  </hgroup>
+  {% if can_edit and session.status.value == 'live' %}
+  <form method="post" action="/admin/sessions/{{ session.id }}/end" onsubmit="return confirm('End this session now and mark everyone else absent?')">
+    {{ csrf() }}<button type="submit" class="secondary">End session</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if not can_edit and edit_reason %}<p class="muted">{{ edit_reason }}</p>{% endif %}
+
+<div id="grid" hx-get="/admin/sessions/{{ session.id }}/grid" hx-trigger="every 3s" hx-swap="innerHTML">
+  {% include "sessions/_grid.html" %}
+</div>
+
+{% if can_edit %}
+<article>
+  <h4>Bulk edit</h4>
+  <form method="post" action="/admin/sessions/{{ session.id }}/bulk" class="grid" id="bulk-form">
+    {{ csrf() }}
+    <label>Students
+      <select name="student_id" multiple size="6">
+        {% for row in rows %}<option value="{{ row.student.id }}">{{ row.student.usn }} {{ row.student.name }}</option>{% endfor %}
+      </select>
+      <small>Ctrl/Cmd-click to select several.</small>
+    </label>
+    <label>Set to
+      <select name="status">{% for s in statuses %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select>
+      <input type="text" name="reason" placeholder="Reason (required), e.g. college event" required>
+      <button type="submit">Apply to selected</button>
+    </label>
+  </form>
+</article>
+{% endif %}
+{% endblock %}

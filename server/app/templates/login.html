@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Sign in · {{ app_name }}{% endblock %}
+{% block content %}
+<article class="login-card">
+  <hgroup>
+    <h1>Sign in</h1>
+    <p>Faculty and admin accounts only. Device PINs do not work here.</p>
+  </hgroup>
+  {% if error %}<div class="flash flash-error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/admin/login">
+    <input type="hidden" name="csrf_token" value="{{ login_csrf }}">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>Email
+      <input type="email" name="email" value="{{ email or '' }}" required autocomplete="username" autofocus>
+    </label>
+    <label>Password
+      <input type="password" name="password" required autocomplete="current-password">
+    </label>
+    <button type="submit">Sign in</button>
+  </form>
+</article>
+{% endblock %}

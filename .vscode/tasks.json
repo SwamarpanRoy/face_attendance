@@ -1,0 +1,139 @@
+{
+  // Terminal -> Run Task. Pi tasks use the SSH alias in settings.json
+  // ("attendance.piHost") and become live in milestone M1 (tools/deploy.py).
+  "version": "2.0.0",
+  "options": { "cwd": "${workspaceFolder}" },
+  "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+  "tasks": [
+    {
+      "label": "Server: run (dev)",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "uvicorn", "server.app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Device: run simulator (webcam)",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "device.app.main", "--sim"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Pi: deploy",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["tools/deploy.py", "--host", "${config:attendance.piHost}"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Pi: deploy (rsync uncommitted changes)",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["tools/deploy.py", "--host", "${config:attendance.piHost}", "--rsync"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Pi: restart app",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["tools/deploy.py", "--host", "${config:attendance.piHost}", "--restart-only"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Pi: tail logs",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["tools/deploy.py", "--host", "${config:attendance.piHost}", "--logs"],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Pi: open shell",
+      "type": "shell",
+      "command": "ssh",
+      "args": ["${config:attendance.piHost}"],
+      "presentation": { "reveal": "always", "focus": true, "panel": "new" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Pi: run bench",
+      "type": "shell",
+      "command": "ssh",
+      "args": ["${config:attendance.piHost}", "cd ~/face-attendance && .venv/bin/python tools/bench_pi.py"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Models: fetch",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["tools/fetch_models.py"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: all",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "pytest"],
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: integration (needs Postgres)",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "pytest", "--run-integration", "-m", "integration"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint: ruff check",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "ruff", "check", "."],
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint: ruff format check",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "ruff", "format", "--check", "."],
+      "problemMatcher": []
+    },
+    {
+      "label": "Typecheck: mypy (common + server)",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "mypy"],
+      "problemMatcher": []
+    },
+    {
+      "label": "DB: migrate",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "alembic", "-c", "server/alembic.ini", "upgrade", "head"],
+      "problemMatcher": []
+    },
+    {
+      "label": "DB: start Postgres (portable, Windows)",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["scripts/pg_portable.py", "up"],
+      "problemMatcher": []
+    },
+    {
+      "label": "DB: seed demo data",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["tools/seed_demo.py"],
+      "problemMatcher": []
+    },
+    {
+      "label": "DB: start Postgres (docker compose)",
+      "type": "shell",
+      "command": "docker",
+      "args": ["compose", "--env-file", ".env", "-f", "server/deploy/docker-compose.yml", "up", "-d"],
+      "problemMatcher": []
+    }
+  ]
+}

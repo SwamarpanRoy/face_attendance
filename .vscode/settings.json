@@ -1,0 +1,53 @@
+{
+  // ---- Fill-in values (Section 0 of the build spec). Single place used by
+  // tasks.json and launch.json. Change these when the Pi is set up.
+  "attendance.piHost": "attendance-pi",
+  "attendance.piUser": "utkarsh",
+
+  // ---- Python
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.extraPaths": ["."],
+  "python.analysis.typeCheckingMode": "basic",
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": ["tests"],
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+
+  // ---- Editor
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/*.egg-info": true
+  },
+
+  // ---- SQLTools: local Postgres (docker compose in server/deploy/)
+  "sqltools.connections": [
+    {
+      "name": "attendance (local)",
+      "driver": "PostgreSQL",
+      "server": "localhost",
+      "port": 5432,
+      "database": "attendance",
+      "username": "attendance",
+      "askForPassword": true,
+      "previewLimit": 50
+    }
+  ],
+
+  // ---- REST Client: used by the request examples in docs/api.md
+  "rest-client.environmentVariables": {
+    "local": { "baseUrl": "http://localhost:8000" }
+  }
+}
