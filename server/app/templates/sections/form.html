@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_macros.html" import input, csrf with context %}
+{% block title %}{{ 'Edit' if section else 'Add' }} section · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>{{ 'Edit ' ~ section.name if section else 'Add section' }}</h1>
+<form method="post" action="{{ '/admin/sections/' ~ section.id if section else '/admin/sections' }}" class="narrow">
+  {{ csrf() }}
+  {{ input('name', 'Section name', values.get('name'), required=true, errors=errors, placeholder='ECE-7A') }}
+  <div class="grid">
+    {{ input('department', 'Department', values.get('department'), required=true, errors=errors, placeholder='ECE') }}
+    {{ input('semester', 'Semester', values.get('semester'), type='number', required=true, errors=errors) }}
+  </div>
+  <div class="actions">
+    <button type="submit">{{ 'Save' if section else 'Add section' }}</button>
+    <a href="{{ '/admin/sections/' ~ section.id if section else '/admin/sections' }}" role="button" class="secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}

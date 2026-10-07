@@ -1,0 +1,42 @@
+# --- secrets and local config (commit only the *.example files)
+.env
+.env.*
+!.env.example
+device.toml
+!device.example.toml
+
+# --- models and biometric data: never in git
+models/*
+!models/.gitkeep
+data/
+backups/
+*.onnx
+# calibration reports hold only score statistics and plots; regenerate with
+# tools/calibrate.py, or `git add -f` a final report for the write-up
+calibration/
+
+# --- local databases (device SQLite, test dbs)
+*.db
+*.sqlite
+*.sqlite3
+
+# --- python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- editors / OS
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+.vscode/*.local.json

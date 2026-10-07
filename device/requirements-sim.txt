@@ -1,0 +1,5 @@
+# Laptop simulator extras: USB webcam via OpenCV and PyQt5 from pip. NOT for the Pi.
+-r requirements.txt
+numpy==2.2.4  # same as python3-numpy on Raspberry Pi OS Trixie (the Pi's apt version)
+opencv-python==4.10.0.84
+PyQt5==5.15.11

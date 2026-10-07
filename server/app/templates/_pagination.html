@@ -1,0 +1,9 @@
+{% if page.pages > 1 %}
+<nav class="pagination" aria-label="Pagination">
+  <ul>
+    <li>{% if page.has_prev %}<a href="{{ url_with(request, page=page.number - 1) }}">&lsaquo; Prev</a>{% else %}<span class="muted">&lsaquo; Prev</span>{% endif %}</li>
+    <li><small>Page {{ page.number }} of {{ page.pages }} &middot; {{ page.total }} rows</small></li>
+    <li>{% if page.has_next %}<a href="{{ url_with(request, page=page.number + 1) }}">Next &rsaquo;</a>{% else %}<span class="muted">Next &rsaquo;</span>{% endif %}</li>
+  </ul>
+</nav>
+{% endif %}

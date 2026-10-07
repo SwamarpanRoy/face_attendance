@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Courses · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Courses</h1>
+  {% if is_admin %}<a href="/admin/courses/new" role="button">Add course</a>{% endif %}
+</div>
+<table>
+  <thead><tr><th>Code</th><th>Name</th><th>Dept</th><th>Sem</th><th>Taught to</th></tr></thead>
+  <tbody>
+  {% for c in courses %}
+    <tr>
+      <td><a href="/admin/courses/{{ c.id }}">{{ c.code }}</a></td>
+      <td>{{ c.name }}</td>
+      <td>{{ c.department }}</td>
+      <td>{{ c.semester }}</td>
+      <td>{% for o in c.offerings %}<span class="chip">{{ o.section.name }} · {{ o.faculty.name }}</span> {% else %}<span class="muted">no sections yet</span>{% endfor %}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5" class="muted">No courses yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

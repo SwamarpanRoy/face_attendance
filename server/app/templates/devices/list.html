@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "_macros.html" import input, chip, csrf with context %}
+{% block title %}Devices · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Devices</h1>
+
+<article>
+  <h4>Register a device</h4>
+  <form method="post" action="/admin/devices" class="filters">
+    {{ input('name', 'Device name', values.get('name'), required=true, errors=errors, placeholder='pi-01') }}
+    <button type="submit">Register and show token</button>
+  </form>
+  <small class="muted">The token is shown once. Put it in the device's <code>device.toml</code> under <code>[server] token</code>.</small>
+</article>
+
+{% for d in devices %}
+<article class="{{ '' if d.active else 'inactive' }}">
+  <div class="page-head">
+    <hgroup>
+      <h3>{{ d.name }}
+        {% if not d.active %}{{ chip('revoked', 'bad') }}
+        {% elif d.last_seen_at and d.last_seen_at >= cutoff %}{{ chip('online', 'ok') }}
+        {% else %}{{ chip('offline', 'warn') }}{% endif %}
+      </h3>
+      <p>
+        last seen {{ d.last_seen_at|local }} · IP {{ d.last_ip or '–' }} · WiFi {{ d.ssid or '–' }} ·
+        app {{ d.app_version or '–' }} · model {{ d.model_version or '–' }} ·
+        temp {{ '%.0f°C'|format(d.cpu_temp) if d.cpu_temp is not none else '–' }} ·
+        free {{ d.free_mem_mb ~ ' MB' if d.free_mem_mb is not none else '–' }} ·
+        queue {{ d.queue_len if d.queue_len is not none else '–' }}
+        {% if d.clock_synced is sameas false %} · {{ chip('clock not synced', 'warn') }}{% endif %}
+      </p>
+    </hgroup>
+  </div>
+  <div class="grid">
+    <form method="post" action="/admin/devices/{{ d.id }}/sections">
+      {{ csrf() }}
+      <fieldset>
+        <legend>Sections this device caches</legend>
+        {% set assigned = d.sections|map(attribute='id')|list %}
+        {% for s in sections %}
+          <label><input type="checkbox" name="section_id" value="{{ s.id }}" {% if s.id in assigned %}checked{% endif %}> {{ s.name }}</label>
+        {% endfor %}
+      </fieldset>
+      <button type="submit" class="secondary">Save sections</button>
+    </form>
+    <div>
+      <form method="post" action="/admin/devices/{{ d.id }}/rotate" class="stack" onsubmit="return confirm('Issue a new token for {{ d.name }}? The old one stops working immediately.')">
+        {{ csrf() }}<button type="submit" class="secondary outline">New token{% if not d.active %} (re-activate){% endif %}</button>
+      </form>
+      {% if d.active %}
+      <form method="post" action="/admin/devices/{{ d.id }}/revoke" class="stack" onsubmit="return confirm('Revoke {{ d.name }}? It will wipe its cached data on next contact.')">
+        {{ csrf() }}
+        <input type="text" name="reason" placeholder="Reason (optional)">
+        <button type="submit" class="contrast">Revoke</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</article>
+{% else %}
+<p class="muted">No devices yet.</p>
+{% endfor %}
+{% endblock %}

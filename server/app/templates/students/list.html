@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import chip %}
+{% block title %}Students · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Students</h1>
+  {% if is_admin %}<a href="/admin/students/new" role="button">Add student</a>{% endif %}
+</div>
+
+<form method="get" action="/admin/students" class="filters">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search USN or name">
+  <select name="section">
+    <option value="">All sections</option>
+    {% for s in sections %}<option value="{{ s.id }}" {% if section_id == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+  </select>
+  <label><input type="checkbox" name="show_inactive" value="true" {% if show_inactive %}checked{% endif %}> Show inactive</label>
+  <button type="submit" class="secondary">Filter</button>
+</form>
+
+<table>
+  <thead><tr><th>USN</th><th>Name</th><th>Section</th><th>Sem</th><th>Templates</th><th>Consent</th><th></th></tr></thead>
+  <tbody>
+  {% for student, templates, consented in rows %}
+    <tr class="{{ '' if student.active else 'inactive' }}">
+      <td><a href="/admin/students/{{ student.id }}">{{ student.usn }}</a></td>
+      <td>{{ student.name }}</td>
+      <td>{{ student.section.name if student.section else '–' }}</td>
+      <td>{{ student.semester }}</td>
+      <td>{{ templates }}</td>
+      <td>{% if consented %}{{ chip('consented', 'ok') }}{% else %}{{ chip('no consent', 'warn') }}{% endif %}</td>
+      <td>{% if not student.active %}{{ chip('inactive') }}{% endif %}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7" class="muted">No students match.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% include "_pagination.html" %}
+{% endblock %}

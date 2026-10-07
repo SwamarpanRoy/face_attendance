@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import chip %}
+{% block title %}Sessions · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Sessions</h1>
+<form method="get" action="/admin/sessions" class="filters">
+  <input type="date" name="day" value="{{ day.isoformat() }}">
+  <select name="course">
+    <option value="">All courses</option>
+    {% for c in courses %}<option value="{{ c.id }}" {% if course_id == c.id %}selected{% endif %}>{{ c.code }} {{ c.name }}</option>{% endfor %}
+  </select>
+  <select name="status">
+    <option value="">Live and ended</option>
+    <option value="live" {% if status == 'live' %}selected{% endif %}>Live</option>
+    <option value="ended" {% if status == 'ended' %}selected{% endif %}>Ended</option>
+  </select>
+  <button type="submit" class="secondary">Show</button>
+</form>
+<table>
+  <thead><tr><th>Started</th><th>Ended</th><th>Course</th><th>Section</th><th>Faculty</th><th>Present</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for s in sessions %}
+    <tr>
+      <td><a href="/admin/sessions/{{ s.id }}">{{ s.started_at|local }}</a></td>
+      <td>{{ s.ended_at|localtime if s.ended_at else '–' }}</td>
+      <td>{{ s.course.code }} {{ s.course.name }}</td>
+      <td>{{ s.section.name }}</td>
+      <td>{{ s.faculty.name }}</td>
+      <td>{{ counts[s.id] }}</td>
+      <td>{{ chip(s.status.value, 'live' if s.status.value == 'live' else '') }}{% if not s.clock_synced %} {{ chip('clock?', 'warn') }}{% endif %}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7" class="muted">No sessions on {{ day.strftime('%d %b %Y') }}.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,57 @@
+# Device configuration. Copy to ~/.config/attendance/device.toml on the Pi
+# (or on the laptop for the simulator) and edit. Never commit the real file:
+# it contains the device token.
+#
+# Every threshold and size lives here, not in code. Values the server delivers
+# during sync (calibrated threshold/margin, model_version) always take precedence
+# over the fallbacks below.
+
+[device]
+id = "pi-01"
+name = "Attendance Pi 01"
+
+[server]
+# The laptop for now; the office computer or its Tailscale name later.
+url = "http://<SERVER_HOST>:8000"
+# Shown exactly once when the device is registered in /admin/devices.
+token = "paste-device-token-here"
+timeout_s = 5
+
+[camera]
+# Pi: picamera2 streams. Simulator: OpenCV webcam index.
+preview_size = [640, 480]
+main_size = [1280, 960]
+sim_webcam_index = 0
+
+[recognition]
+model_version = "buffalo_s/w600k_mbf"
+detector_input = 320        # 320 or 480; tune with tools/bench_pi.py (M8)
+onnx_threads = 4
+# PROVISIONAL fallbacks, used only until the server delivers a calibration
+# (tools/calibrate.py, M5). While they are in use the Settings screen shows
+# "not calibrated". Do not tune these by hand: run the calibration instead.
+fallback_threshold = 0.40
+fallback_margin = 0.05
+min_face_width_px = 90      # "Move closer" below this
+blur_min = 60.0             # Laplacian variance; "Hold still" below this
+max_yaw_deg = 25            # "Look at the camera" beyond this
+vote_window = 3             # same USN must win vote_required of the last vote_window frames
+vote_required = 2
+
+[sync]
+interval_s = 5              # outbox upload cadence when online (batches of batch_size)
+batch_size = 200
+heartbeat_s = 30
+prefetch_interval_s = 600   # templates for all assigned sections, catalog, PIN hashes, calibration
+backoff_max_s = 300         # exponential backoff cap while offline
+
+[ui]
+sound = false               # short beep on "Face matched"
+tts = false                 # espeak-ng "Face matched"
+
+[logging]
+level = "INFO"
+
+[paths]
+models_dir = "models"                       # relative to the repo checkout (or set MODELS_DIR)
+state_dir = "~/.local/state/attendance"     # device.db (SQLite) and device.log live here

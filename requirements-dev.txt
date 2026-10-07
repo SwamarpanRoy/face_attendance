@@ -1,0 +1,5 @@
+# Laptop-only developer tooling (lint, tests, types). Pinned after a verified install.
+ruff==0.16.10
+pytest==9.1.1
+mypy==2.4.0
+types-openpyxl==3.1.5.20260827

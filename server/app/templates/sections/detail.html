@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, chip with context %}
+{% block title %}{{ section.name }} · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <hgroup>
+    <h1>Section {{ section.name }}</h1>
+    <p>{{ section.department }} &middot; semester {{ section.semester }} &middot; {{ students|length }} students</p>
+  </hgroup>
+  {% if is_admin %}<a href="/admin/sections/{{ section.id }}/edit" role="button" class="secondary">Edit</a>{% endif %}
+</div>
+
+{% if import_result %}
+<article class="{{ 'flash-error' if import_result.rejected and not (import_result.created or import_result.updated) else 'flash-success' }} flash">
+  <strong>Import finished:</strong> {{ import_result.created }} added, {{ import_result.updated }} updated, {{ import_result.rejected|length }} rejected.
+  {% if import_result.rejected %}
+  <details><summary>Rejected rows</summary>
+    <table><thead><tr><th>Row</th><th>USN</th><th>Reason</th></tr></thead><tbody>
+    {% for row_no, usn, reason in import_result.rejected %}<tr><td>{{ row_no }}</td><td>{{ usn }}</td><td>{{ reason }}</td></tr>{% endfor %}
+    </tbody></table>
+  </details>
+  {% endif %}
+</article>
+{% endif %}
+
+<div class="grid">
+  <article>
+    <h3>Courses</h3>
+    {% for o in offerings %}<p><a href="/admin/courses/{{ o.course.id }}">{{ o.course.code }} {{ o.course.name }}</a> <span class="muted">· {{ o.faculty.name }}</span></p>{% else %}<p class="muted">No courses assigned. Assign them from a course page.</p>{% endfor %}
+  </article>
+  {% if is_admin %}
+  <article>
+    <h3>Import roster (CSV)</h3>
+    <form method="post" action="/admin/sections/{{ section.id }}/import" enctype="multipart/form-data">
+      {{ csrf() }}
+      <input type="file" name="file" accept=".csv,text/csv" required>
+      <button type="submit" class="secondary">Import</button>
+    </form>
+    <small class="muted">Columns: <code>usn,name</code> and optionally <code>department,semester</code>. Existing USNs are updated and moved into this section.</small>
+  </article>
+  {% endif %}
+</div>
+
+<h3>Students</h3>
+<table>
+  <thead><tr><th>USN</th><th>Name</th><th>Sem</th><th></th></tr></thead>
+  <tbody>
+  {% for s in students %}
+    <tr class="{{ '' if s.active else 'inactive' }}">
+      <td><a href="/admin/students/{{ s.id }}">{{ s.usn }}</a></td>
+      <td>{{ s.name }}</td>
+      <td>{{ s.semester }}</td>
+      <td>{% if not s.active %}{{ chip('inactive') }}{% endif %}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4" class="muted">No students in this section yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

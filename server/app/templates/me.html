@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import input, csrf with context %}
+{% block title %}My account · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>My account</h1>
+<p>{{ user.name }} &middot; {{ user.email }} &middot; <span class="chip">{{ user.role.value }}</span></p>
+
+<div class="grid">
+  <article>
+    <h3>Change password</h3>
+    <form method="post" action="/admin/me/password">
+      {{ csrf() }}
+      {{ input('current_password', 'Current password', type='password', required=true, errors=errors, autocomplete='current-password') }}
+      {{ input('new_password', 'New password', type='password', required=true, errors=errors, help='At least 10 characters.', autocomplete='new-password') }}
+      {{ input('confirm_password', 'Confirm new password', type='password', required=true, errors=errors, autocomplete='new-password') }}
+      <button type="submit">Change password</button>
+    </form>
+  </article>
+
+  <article>
+    <h3>Device PIN</h3>
+    <p class="muted">
+      {% if user.pin_hash %}PIN set {{ user.pin_updated_at.strftime('%d %b %Y') if user.pin_updated_at else '' }}.{% else %}No PIN yet. You need one to start sessions on a device.{% endif %}
+      {{ settings.pin_min_length }}–{{ settings.pin_max_length }} digits. It only unlocks devices, never this dashboard.
+    </p>
+    <form method="post" action="/admin/me/pin">
+      {{ csrf() }}
+      {{ input('current_password', 'Current password', type='password', required=true, errors={'current_password': errors.get('pin_current_password')}, autocomplete='current-password') }}
+      {{ input('pin', 'New PIN', type='password', required=true, errors=errors, placeholder='digits only') }}
+      {{ input('confirm_pin', 'Confirm PIN', type='password', required=true, errors=errors) }}
+      <button type="submit">Set PIN</button>
+    </form>
+  </article>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Audit log · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Audit log</h1>
+<form method="get" action="/admin/audit" class="filters">
+  <select name="actor">
+    <option value="">Any user</option>
+    {% for a in actors %}<option value="{{ a.id }}" {% if actor_id == a.id %}selected{% endif %}>{{ a.name }}</option>{% endfor %}
+  </select>
+  <select name="entity">
+    <option value="">Any entity</option>
+    {% for e in entities %}<option value="{{ e }}" {% if entity == e %}selected{% endif %}>{{ e }}</option>{% endfor %}
+  </select>
+  <input type="text" name="action" value="{{ action }}" placeholder="action prefix, e.g. attendance.">
+  <input type="date" name="start" value="{{ start.isoformat() if start else '' }}">
+  <input type="date" name="end" value="{{ end.isoformat() if end else '' }}">
+  <button type="submit" class="secondary">Filter</button>
+</form>
+<table class="audit">
+  <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Entity</th><th>Reason</th><th>Before → after</th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+      <td>{{ row.created_at|local }}</td>
+      <td>{{ row.actor.name if row.actor else 'system / device' }}</td>
+      <td><code>{{ row.action }}</code></td>
+      <td>{{ row.entity }} {{ row.entity_id }}</td>
+      <td>{{ row.reason or '' }}</td>
+      <td><small>{% if row.before %}{{ row.before|tojson }} → {% endif %}{{ row.after|tojson if row.after else '' }}</small></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6" class="muted">Nothing matches.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% include "_pagination.html" %}
+{% endblock %}

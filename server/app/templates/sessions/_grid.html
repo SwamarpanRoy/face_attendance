@@ -1,0 +1,29 @@
+{% from "_macros.html" import chip %}
+{% set present = rows|selectattr('record')|selectattr('record.status.value', 'in', ['present', 'late'])|list|length %}
+<p class="muted">Present {{ present }} of {{ rows|length }} · updated {{ now_local if now_local else '' }}<span class="htmx-indicator"> …</span></p>
+<div class="roster">
+  {% for row in rows %}
+    {% set r = row.record %}
+    <div class="cell {{ r.status.value if r else 'none' }}" id="cell-{{ row.student.id }}">
+      <div class="usn"><a href="/admin/students/{{ row.student.id }}">{{ row.student.usn }}</a></div>
+      <div class="name">{{ row.student.name }}</div>
+      <div class="meta">
+        {% if r %}
+          {{ chip(r.status.value, {'present': 'ok', 'late': 'warn', 'excused': '', 'absent': 'bad'}[r.status.value]) }}
+          {% if r.method.value == 'face' %}
+            <small>{{ r.captured_at|localtime if r.captured_at else '' }}{% if r.score is not none %} · {{ '%.2f'|format(r.score) }}{% endif %}{% if not r.clock_synced %} · clock?{% endif %}</small>
+          {% else %}
+            <small>manual</small>
+          {% endif %}
+        {% else %}
+          {{ chip('–') }}
+        {% endif %}
+      </div>
+      {% if can_edit %}
+      <button class="small secondary outline"
+              hx-get="/admin/sessions/{{ session.id }}/students/{{ row.student.id }}/edit"
+              hx-target="#cell-{{ row.student.id }}" hx-swap="beforeend">Edit</button>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>

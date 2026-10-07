@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import select, csrf with context %}
+{% block title %}{{ course.code }} · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <hgroup>
+    <h1>{{ course.code }} {{ course.name }}</h1>
+    <p>{{ course.department }} &middot; semester {{ course.semester }}</p>
+  </hgroup>
+  {% if is_admin %}<a href="/admin/courses/{{ course.id }}/edit" role="button" class="secondary">Edit</a>{% endif %}
+</div>
+
+<h3>Sections and faculty</h3>
+<table>
+  <thead><tr><th>Section</th><th>Faculty</th><th></th></tr></thead>
+  <tbody>
+  {% for o in course.offerings %}
+    <tr>
+      <td><a href="/admin/sections/{{ o.section.id }}">{{ o.section.name }}</a></td>
+      <td>{{ o.faculty.name }}</td>
+      <td class="right">
+        {% if is_admin %}
+        <form method="post" action="/admin/offerings/{{ o.id }}/delete" class="inline" onsubmit="return confirm('Remove {{ o.section.name }} from {{ course.code }}?')">
+          {{ csrf() }}<button type="submit" class="secondary outline small">Remove</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="3" class="muted">This course is not assigned to any section yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% if is_admin %}
+<article>
+  <h4>Assign to a section</h4>
+  <form method="post" action="/admin/courses/{{ course.id }}/offerings" class="grid">
+    {{ csrf() }}
+    {{ select('section_id', 'Section', sections|map(attribute='id')|zip(sections|map(attribute='name'))|list, errors=errors) }}
+    {{ select('faculty_id', 'Faculty', faculty|map(attribute='id')|zip(faculty|map(attribute='name'))|list, errors=errors) }}
+    <label>&nbsp;<button type="submit">Assign</button></label>
+  </form>
+  <small class="muted">Assigning again for the same section changes its faculty. Faculty can only see and edit sessions of courses assigned to them here.</small>
+</article>
+{% endif %}
+{% endblock %}

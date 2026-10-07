@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ status_code }} · {{ app_name }}{% endblock %}
+{% block content %}
+<article>
+  <h1>{% if status_code == 404 %}Not found{% elif status_code == 403 %}Not allowed{% else %}Error {{ status_code }}{% endif %}</h1>
+  <p>{{ detail }}</p>
+  <a href="/admin" role="button" class="secondary">Back to dashboard</a>
+</article>
+{% endblock %}

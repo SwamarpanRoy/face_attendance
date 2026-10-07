@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% from "_macros.html" import chip, csrf with context %}
+{% block title %}{{ student.usn }} · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <hgroup>
+    <h1>{{ student.name }}</h1>
+    <p>{{ student.usn }} &middot; {{ student.department }} sem {{ student.semester }} &middot; {{ student.section.name if student.section else 'no section' }}
+      {% if not student.active %} &middot; {{ chip('inactive') }}{% endif %}</p>
+  </hgroup>
+  {% if is_admin %}<a href="/admin/students/{{ student.id }}/edit" role="button" class="secondary">Edit</a>{% endif %}
+</div>
+
+<div class="grid">
+  <article>
+    <h3>Consent</h3>
+    {% if consents %}
+      <table>
+        <thead><tr><th>Given</th><th>Version</th><th>Method</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for c in consents %}
+          <tr>
+            <td>{{ c.consent_at|local }}</td>
+            <td>{{ c.consent_version }}</td>
+            <td>{{ c.method.value }}</td>
+            <td>{% if c.withdrawn_at %}{{ chip('withdrawn ' ~ (c.withdrawn_at|localdate), 'warn') }}{% else %}{{ chip('active', 'ok') }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">No consent recorded. Enrolment is not possible until consent is given (device or bulk CSV).</p>
+    {% endif %}
+  </article>
+
+  <article>
+    <h3>Face templates ({{ templates|length }})</h3>
+    {% if templates %}
+      <table>
+        <thead><tr><th>Created</th><th>Source</th><th>Model</th><th>Quality</th></tr></thead>
+        <tbody>
+        {% for t in templates %}
+          <tr>
+            <td>{{ t.created_at|local }}</td>
+            <td>{{ t.source.value }}</td>
+            <td><code>{{ t.model_version }}</code></td>
+            <td>{{ '%.0f'|format(t.quality_score) if t.quality_score is not none else '–' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">Not enrolled yet.</p>
+    {% endif %}
+    {% if is_admin %}
+    <details>
+      <summary>Biometric data actions</summary>
+      <form method="post" action="/admin/students/{{ student.id }}/reenrol" class="stack">
+        {{ csrf() }}
+        <input type="text" name="reason" placeholder="Reason (required)" required>
+        <button type="submit" class="secondary" {% if not templates %}disabled{% endif %}>Re-enrol (drop current templates)</button>
+      </form>
+      <form method="post" action="/admin/students/{{ student.id }}/withdraw-consent" class="stack"
+            onsubmit="return confirm('Delete all templates and crops for {{ student.usn }}? Attendance history is kept.')">
+        {{ csrf() }}
+        <input type="text" name="reason" placeholder="Reason (required)" required>
+        <button type="submit" class="contrast" {% if not has_active_consent %}disabled{% endif %}>Withdraw consent &amp; delete biometric data</button>
+      </form>
+    </details>
+    {% endif %}
+  </article>
+</div>
+
+<h3>Attendance by course</h3>
+{% if history.per_course %}
+<table>
+  <thead><tr><th>Course</th><th>Held</th><th>Attended</th><th>Late</th><th>Excused</th><th>%</th></tr></thead>
+  <tbody>
+  {% for r in history.per_course %}
+    <tr class="{{ 'short' if r.percentage is not none and r.percentage < settings.attendance_shortage_threshold_pct else '' }}">
+      <td>{{ r.course_code }} {{ r.course_name }}</td>
+      <td>{{ r.held }}</td><td>{{ r.attended }}</td><td>{{ r.late }}</td><td>{{ r.excused }}</td>
+      <td>{{ '%.0f%%'|format(r.percentage) if r.percentage is not none else '–' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No ended sessions for this section yet.</p>
+{% endif %}
+
+<h3>History</h3>
+<table>
+  <thead><tr><th>Date</th><th>Course</th><th>Faculty</th><th>Status</th><th>How</th><th>Time / score</th></tr></thead>
+  <tbody>
+  {% for row in history.rows %}
+    <tr>
+      <td><a href="/admin/sessions/{{ row.session.id }}">{{ row.session.started_at|local }}</a></td>
+      <td>{{ row.session.course.code }}</td>
+      <td>{{ row.session.faculty.name }}</td>
+      <td>{% if row.record %}{{ chip(row.record.status.value, {'present': 'ok', 'late': 'warn', 'excused': '', 'absent': 'bad'}[row.record.status.value]) }}{% elif row.session.status.value == 'live' %}{{ chip('live', 'live') }}{% else %}{{ chip('–') }}{% endif %}</td>
+      <td>{{ row.record.method.value if row.record else '' }}</td>
+      <td>{% if row.record and row.record.captured_at %}{{ row.record.captured_at|localtime }}{% endif %}{% if row.record and row.record.score is not none %} · {{ '%.2f'|format(row.record.score) }}{% endif %}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6" class="muted">No sessions yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

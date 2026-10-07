@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import input, select, checkbox, csrf with context %}
+{% block title %}{{ 'Edit' if member else 'Add' }} account · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>{{ 'Edit ' ~ member.name if member else 'Add faculty account' }}</h1>
+
+<form method="post" action="{{ '/admin/faculty/' ~ member.id if member else '/admin/faculty' }}" class="narrow">
+  {{ csrf() }}
+  {{ input('name', 'Name', values.get('name'), required=true, errors=errors) }}
+  {{ input('email', 'Email', values.get('email'), type='email', required=true, errors=errors, autocomplete='off') }}
+  {{ select('role', 'Role', [('faculty', 'Faculty: own courses only'), ('admin', 'Admin: everything')], selected=values.get('role'), errors=errors) }}
+  {% if member %}
+    {{ checkbox('active', 'Active (inactive accounts cannot sign in or unlock devices)', values.get('active', true)) }}
+  {% else %}
+    {{ input('password', 'Initial password', type='password', required=true, errors=errors, help='At least 10 characters. Ask them to change it from "My account".', autocomplete='new-password') }}
+  {% endif %}
+  <div class="actions">
+    <button type="submit">{{ 'Save' if member else 'Create account' }}</button>
+    <a href="/admin/faculty" role="button" class="secondary">Back</a>
+  </div>
+</form>
+
+{% if member %}
+<div class="grid">
+  <article>
+    <h4>Reset password</h4>
+    <form method="post" action="/admin/faculty/{{ member.id }}/password">
+      {{ csrf() }}
+      {{ input('password', 'New password', type='password', required=true, errors=errors, autocomplete='new-password') }}
+      <button type="submit" class="secondary">Set password</button>
+    </form>
+  </article>
+  <article>
+    <h4>Device PIN</h4>
+    <p class="muted">{% if member.pin_hash %}Set{% if member.pin_updated_at %} on {{ member.pin_updated_at.strftime('%d %b %Y') }}{% endif %}.{% else %}Not set.{% endif %}
+      {{ settings.pin_min_length }}–{{ settings.pin_max_length }} digits, unique per account.</p>
+    <form method="post" action="/admin/faculty/{{ member.id }}/pin">
+      {{ csrf() }}
+      {{ input('pin', 'New PIN', type='password', required=true, errors=errors, placeholder='digits only') }}
+      <button type="submit" class="secondary">Set PIN</button>
+    </form>
+  </article>
+</div>
+{% endif %}
+{% endblock %}

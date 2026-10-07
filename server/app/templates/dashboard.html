@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "_macros.html" import chip %}
+{% block title %}Dashboard · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="stats">
+  <article><small>Active students</small><strong>{{ counts.students }}</strong></article>
+  <article><small>Face templates</small><strong>{{ counts.templates }}</strong></article>
+  <article><small>Courses / sections</small><strong>{{ counts.courses }} / {{ counts.sections }}</strong></article>
+  <article><small>Devices online</small><strong>{{ counts.devices_online }} / {{ counts.devices_total }}</strong></article>
+  <article><small>Below {{ threshold|int }}% (90 days)</small><strong>{{ shortage_total }}</strong></article>
+</div>
+
+<div class="grid">
+  <article>
+    <h3>Sessions today</h3>
+    {% if sessions_today %}
+    <table>
+      <thead><tr><th>Started</th><th>Course</th><th>Section</th><th>Present</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for s in sessions_today %}
+        <tr>
+          <td><a href="/admin/sessions/{{ s.id }}">{{ s.started_at|localtime }}</a></td>
+          <td>{{ s.course.code }} {{ s.course.name }}</td>
+          <td>{{ s.section.name }}</td>
+          <td>{{ present_counts[s.id] }}</td>
+          <td>{{ chip(s.status.value, 'live' if s.status.value == 'live' else '') }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No sessions yet today.</p>
+    {% endif %}
+    <p><a href="/admin/sessions">All sessions</a></p>
+  </article>
+
+  <article>
+    <h3>Devices</h3>
+    {% if devices %}
+    <table>
+      <thead><tr><th>Device</th><th>Last seen</th><th>Queue</th><th></th></tr></thead>
+      <tbody>
+      {% for d in devices %}
+        <tr>
+          <td>{{ d.name }}</td>
+          <td>{{ d.last_seen_at|local }}</td>
+          <td>{{ d.queue_len if d.queue_len is not none else '–' }}</td>
+          <td>{% if d.last_seen_at and d.last_seen_at >= online_cutoff %}{{ chip('online', 'ok') }}{% else %}{{ chip('offline', 'warn') }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No devices registered.</p>
+    {% endif %}
+    {% if warnings %}
+    <h4>Sync warnings</h4>
+    <ul>
+      {% for device, text in warnings %}<li><strong>{{ device.name }}</strong>: {{ text }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% if is_admin %}<p><a href="/admin/devices">Manage devices</a></p>{% endif %}
+  </article>
+</div>
+
+<article>
+  <h3>Students below {{ threshold|int }}% (last 90 days)</h3>
+  {% if shortage %}
+  <table>
+    <thead><tr><th>USN</th><th>Name</th><th>Course</th><th>Attended / held</th><th>%</th></tr></thead>
+    <tbody>
+    {% for r in shortage %}
+      <tr>
+        <td><a href="/admin/students/{{ r.student_id }}">{{ r.usn }}</a></td>
+        <td>{{ r.name }}</td>
+        <td>{{ r.course_code }}</td>
+        <td>{{ r.attended }} / {{ r.counted }}</td>
+        <td>{{ '%.0f'|format(r.percentage) }}%</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if shortage_total > shortage|length %}<p class="muted">{{ shortage_total - shortage|length }} more in the <a href="/admin/reports?view=shortage">shortage report</a>.</p>{% endif %}
+  {% else %}
+  <p class="muted">Nobody below the threshold in the last 90 days.</p>
+  {% endif %}
+</article>
+{% endblock %}

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Face Attendance
+Comment=Portable face-recognition attendance device
+Exec=__HOME__/.local/bin/run_device.sh
+Terminal=false
+X-GNOME-Autostart-enabled=true

@@ -1,0 +1,12 @@
+# Nightly backup at 02:00. Install together with face-attendance-backup.service:
+#   sudo cp server/deploy/face-attendance-backup.* /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now face-attendance-backup.timer
+[Unit]
+Description=Nightly face attendance backup
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

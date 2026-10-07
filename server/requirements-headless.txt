@@ -1,0 +1,3 @@
+# Headless server only (office computer / VM): cv2 without GUI libraries.
+# Do not install next to opencv-python (the laptop simulator); they overwrite each other.
+opencv-python-headless==4.10.0.84

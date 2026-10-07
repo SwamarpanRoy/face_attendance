@@ -1,0 +1,9 @@
+[Unit]
+Description=Face attendance backup (pg_dump + crops)
+
+[Service]
+Type=oneshot
+User=attendance
+WorkingDirectory=/opt/face-attendance
+EnvironmentFile=/opt/face-attendance/.env
+ExecStart=/opt/face-attendance/.venv/bin/python scripts/backup.py --keep 30
