@@ -33,6 +33,7 @@ ROW_RE = re.compile(
     re.S,
 )
 TOKEN_RE = re.compile(r'<code id="token">([^<]+)</code>')
+FORM_RE = re.compile(r"<form\b([^>]*)>(.*?)</form>", re.S | re.I)
 
 
 def _session(db, course, section, faculty, device=None, *, started_at=None, ended=True):
@@ -293,6 +294,29 @@ def test_dashboard_shows_devices_warnings_and_shortage(
 
 
 # --------------------------------------------------------------------------- devices
+def test_every_post_form_carries_the_csrf_token(client, admin, section, login):
+    """A browser only sends what the page contains; posting the token by hand hid a
+    register form that had none (every submit was a 403)."""
+    token = login(admin.email)
+    client.post("/admin/devices", data={"name": "pi-08", "csrf_token": token})
+    for path in (
+        "/admin/devices",
+        "/admin/students",
+        "/admin/students/new",
+        "/admin/courses",
+        "/admin/sections",
+        "/admin/periods",
+        "/admin/faculty",
+        "/admin/me",
+        "/admin/enrolment",
+    ):
+        page = client.get(path)
+        assert page.status_code == 200, path
+        for attrs, body in FORM_RE.findall(page.text):
+            if 'method="post"' in attrs.lower():
+                assert f'name="csrf_token" value="{token}"' in body, f"{path}: <form{attrs}>"
+
+
 def test_device_register_assign_rotate_revoke(client, db, admin, section, login):
     token = login(admin.email)
     created = client.post("/admin/devices", data={"name": "pi-07", "csrf_token": token})
