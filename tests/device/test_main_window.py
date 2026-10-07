@@ -171,7 +171,7 @@ def test_start_is_blocked_for_a_section_without_templates(world):
     window.start._next()  # course
     window.start._next()  # section ECE-7B has no templates -> blocked
     assert window.stack.currentIndex() == window.START
-    assert "not been synced" in window.start.hint.text()
+    assert "No faces enrolled" in window.start.hint.text()
 
 
 def test_settings_shows_fallback_thresholds_and_test_mode_records_nothing(world):

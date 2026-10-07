@@ -146,7 +146,7 @@ def _manager(store, clock_synced=True):
 def test_session_manager_offline_start_record_resume_end(store):
     manager = _manager(store, clock_synced=False)
     assert manager.blocker(2) == NO_TEMPLATES_MESSAGE
-    with pytest.raises(RuntimeError, match="not been synced"):
+    with pytest.raises(RuntimeError, match="No faces enrolled"):
         manager.start(course_id=1, section_id=2, period_id=None, faculty_id=7)
     assert [c["code"] for c in manager.course_options()] == ["22EC71"]
     assert [s["name"] for s in manager.section_options(1)] == ["ECE-7A"]
