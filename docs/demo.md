@@ -13,7 +13,7 @@ Rehearse this twice. Total time about 15 minutes.
    captures). Each takes under a minute. Keep 2–3 volunteers un-enrolled for the "Not
    recognised" moment.
 4. Capture probes for 5+ enrolled volunteers on a different day/light
-   (`tools/capture_probes.py --usn … --count 4`), run `tools/calibrate.py`, open the
+   (on the Pi: `tools/capture_probes.py --device --usn … --count 4`), run `tools/calibrate.py`, open the
    report (`calibration/<ts>/report.md`, histogram, FAR/FRR). *Settings* on the device
    now shows the calibrated threshold; the "Not calibrated" warning is gone.
 5. `tools/bench_pi.py` on the Pi: note p50/p95 for the slides.

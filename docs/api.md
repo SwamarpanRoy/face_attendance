@@ -100,7 +100,7 @@ Use the returned `generated_at` as the next `since`.
 
 ### `POST /probes/{usn}`
 
-Held-out calibration crops from `tools/capture_probes.py --upload` on a Pi
+Held-out calibration crops from `tools/capture_probes.py --device` (or `--upload`) on a Pi
 (`ProbesIn`: `crops_png_b64`, 1 to 10 aligned 112×112 PNGs). Stored under
 `data/probes/<USN>/`, never turned into templates. 409 without an active consent, 403
 for a section not assigned to the device, 422 for an undecodable crop.

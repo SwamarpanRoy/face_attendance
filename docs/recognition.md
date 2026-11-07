@@ -28,11 +28,15 @@ enrolment photos) and returns per-stage timings that `tools/bench_pi.py` aggrega
 device uses `fallback_threshold` / `fallback_margin` from `device.toml` and shows
 "not calibrated".
 
-1. **Probes.** `python tools/capture_probes.py --usn <USN> --count 4` (webcam window) or
-   `--from-folder photos/` (files `<USN>_x.jpg` or `<USN>/*.jpg`) stores aligned
-   112×112 test crops under `data/probes/<USN>/`. On a Pi add `--upload <server> --token
-   <device token>`. Probes need the student's existing consent, are taken on another
-   day or under other light where possible, and are never used as templates.
+1. **Probes.** On the Pi (preferred: same camera and detector settings as live use):
+   `.venv/bin/python tools/capture_probes.py --device --usn <USN> --count 4` captures
+   with the device camera and uploads with the server URL and token from `device.toml`
+   (it imports no server code, so it runs in the Pi's venv). On the server/laptop:
+   `python tools/capture_probes.py --usn <USN> --count 4` (webcam) or `--from-folder
+   photos/` (files `<USN>_x.jpg` or `<USN>/*.jpg`). Either way aligned 112×112 test
+   crops end up under `data/probes/<USN>/` on the server. Probes need the student's
+   existing consent, are taken on another day or under other light where possible, and
+   are never used as templates. `--no-preview` skips the camera window.
 2. **Calibrate.** `python tools/calibrate.py [--target-far 0.001] [--dry-run]` embeds the
    probes and scores them with the same `TemplateIndex` the device runs: genuine =
    probe vs own student (max over templates), impostor = probe vs every other student
