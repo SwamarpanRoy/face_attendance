@@ -84,6 +84,9 @@ if grep -Eiq '^(numpy|opencv)' device/requirements.txt; then
   exit 1
 fi
 .venv/bin/pip install --quiet -r device/requirements.txt
+# Make common/ and device/ importable for `python tools/<name>.py` (bench_pi, capture_probes);
+# without it every tool fails with "No module named 'common'". No deps: they come from above.
+.venv/bin/pip install --quiet --no-deps -e .
 sha256sum device/requirements.txt | cut -d' ' -f1 > .venv/.requirements.sha256
 .venv/bin/python - <<'EOF'
 import numpy, cv2, onnxruntime, PyQt5.QtCore, picamera2
