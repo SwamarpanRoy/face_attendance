@@ -89,7 +89,12 @@ class LiveScreen(QWidget):
         self.header.setAlignment(Qt.AlignCenter)
         self.video = QLabel("Starting camera…")
         self.video.setAlignment(Qt.AlignCenter)
-        self.video.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # A QLabel holding a pixmap insists on at least the pixmap's size, and the pixmap
+        # is scaled to the label's current size: with the default policy the preview
+        # pins the whole window at its current size (or larger), which pushed the UI off
+        # a 480x800 panel. Ignored = take whatever space the layout gives.
+        self.video.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.video.setMinimumSize(160, 120)
         self.video.setStyleSheet("background:#000;color:#9e9e9e;")
         self.banner = Banner()
         self.counter = QLabel("Present: 0")

@@ -191,3 +191,19 @@ def test_settings_shows_fallback_thresholds_and_test_mode_records_nothing(world)
         )
     )
     assert store.pending_count() == 0
+
+
+def test_live_preview_does_not_pin_the_window_size(world):
+    """A pixmap label insists on its pixmap's size; with the preview scaled to the label
+    every frame, the window could never shrink (UI cut off on a 480x800 panel)."""
+    window, _, _ = world
+    window.resize(480, 800)
+    window.start_session_flow()
+    window.start._next()
+    window.start._next()
+    window.start._next()
+    video = window.live.video
+    _wait(lambda: video.pixmap() is not None and not video.pixmap().isNull())
+    _wait(lambda: False, 300)
+    need = window.minimumSizeHint()
+    assert need.width() < 480 and need.height() < 700, (need.width(), need.height())

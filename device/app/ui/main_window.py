@@ -86,6 +86,7 @@ class MainWindow(QMainWindow):
         for screen in (self.idle, self.start, self.live, self.settings):
             self.stack.addWidget(screen)
         self.setCentralWidget(self.stack)
+        self.stack.currentChanged.connect(lambda _: QTimer.singleShot(0, self.check_fits_screen))
         self.resize(360, 640)
         if fullscreen:
             self.setWindowState(Qt.WindowFullScreen)
@@ -134,6 +135,38 @@ class MainWindow(QMainWindow):
             self.sync_worker.stop()
         self.worker.stop()
         super().closeEvent(event)
+
+    def check_fits_screen(self) -> bool:
+        """Log when the window needs more room than the screen it is on.
+
+        Small DSI panels (e.g. 480x800) leave little slack and a too-big window is just
+        cut off at the edges; this line in device.log names the screen that is too big.
+        """
+        screen = self.screen()
+        if screen is None:
+            return True
+        room = screen.geometry().size()
+        need = self.minimumSizeHint()
+        if need.width() <= room.width() and need.height() <= room.height():
+            return True
+        pages = ", ".join(
+            f"{name} {page.minimumSizeHint().width()}x{page.minimumSizeHint().height()}"
+            for name, page in (
+                ("idle", self.idle),
+                ("start", self.start),
+                ("live", self.live),
+                ("settings", self.settings),
+            )
+        )
+        log.warning(
+            "UI does not fit the screen: screen %dx%d, window needs %dx%d (pages: %s)",
+            room.width(),
+            room.height(),
+            need.width(),
+            need.height(),
+            pages,
+        )
+        return False
 
     # ------------------------------------------------------------------ idle
     def show_idle(self) -> None:

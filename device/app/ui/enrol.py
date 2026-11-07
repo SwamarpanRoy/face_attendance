@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
+    QSizePolicy,
     QStackedWidget,
     QTextEdit,
     QVBoxLayout,
@@ -148,6 +149,8 @@ class EnrolDialog(QDialog):
         self.video = QLabel("")
         self.video.setAlignment(Qt.AlignCenter)
         self.video.setMinimumHeight(300)
+        # Same reason as LiveScreen.video: the preview must not dictate the dialog size.
+        self.video.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.video.setStyleSheet("background:#000;")
         self.capture_status = QLabel("")
         self.capture_status.setAlignment(Qt.AlignCenter)
