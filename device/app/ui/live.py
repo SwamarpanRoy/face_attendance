@@ -87,6 +87,10 @@ class LiveScreen(QWidget):
         self.header = QLabel("")
         self.header.setFont(QFont("Sans", 13))
         self.header.setAlignment(Qt.AlignCenter)
+        # Long one-line labels set the minimum width of the whole window (the stacked
+        # pages share one size), so they must wrap: on a 480 px panel the header
+        # "22EC72 Embedded Systems · ECE-7A · Period 6 15:00–16:00 · …" alone needed 660 px.
+        self.header.setWordWrap(True)
         self.video = QLabel("Starting camera…")
         self.video.setAlignment(Qt.AlignCenter)
         # A QLabel holding a pixmap insists on at least the pixmap's size, and the pixmap
@@ -105,6 +109,7 @@ class LiveScreen(QWidget):
         self.recent.setStyleSheet("color:#546e7a;")
         self.stats = QLabel("")
         self.stats.setStyleSheet("color:#90a4ae;font-size:10px;")
+        self.stats.setWordWrap(True)  # updated from startup, even while hidden
 
         self.capture_button = QPushButton("Capture test template")
         self.capture_button.setMinimumHeight(56)

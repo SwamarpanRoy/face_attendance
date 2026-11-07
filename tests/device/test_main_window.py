@@ -207,3 +207,19 @@ def test_live_preview_does_not_pin_the_window_size(world):
     _wait(lambda: False, 300)
     need = window.minimumSizeHint()
     assert need.width() < 480 and need.height() < 700, (need.width(), need.height())
+
+
+def test_long_runtime_texts_wrap_instead_of_widening_the_window(world):
+    """Texts seen on the Pi made the window 660 px wide on a 480 px panel."""
+    window, _, _ = world
+    window.live.stats.setText(
+        "detect p50 17/p95 19 ms  align p50 1/p95 2 ms  embed p50 26/p95 38 ms  "
+        "total p50 47/p95 60 ms"
+    )
+    window.live.header.setText(
+        "22EC72 Embedded Systems · ECE-7A · Period 6 15:00–16:00 · NOT CALIBRATED"
+    )
+    window.idle.server_chip.setText("server: offline, retry in 300 s")
+    window.idle.network_label.setText("WiFi: a-rather-long-hotspot-name   IP: 10.153.42.104")
+    # Margin for the Pi's wider desktop font: 480 px panel, stay well under it here.
+    assert window.minimumSizeHint().width() <= 420, window.minimumSizeHint().width()

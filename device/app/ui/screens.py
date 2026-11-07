@@ -69,6 +69,10 @@ class IdleScreen(QWidget):
         self.queue_label = QLabel("Queued records: 0")
         self.sync_label = QLabel("Last sync: never")
         self.network_label = QLabel("")
+        # Texts that vary at run time ("server: offline, retry in 300 s", WiFi names)
+        # wrap instead of widening the window past a small panel.
+        for label in (self.server_chip, self.queue_label, self.sync_label, self.network_label):
+            label.setWordWrap(True)
         self.warning = QLabel("")
         self.warning.setWordWrap(True)
         self.warning.setStyleSheet("color:#e65100;font-weight:bold;")
