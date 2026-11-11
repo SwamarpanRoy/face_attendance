@@ -276,12 +276,16 @@ def update_student(
         "section_id": student.section_id,
         "active": student.active,
     }
+    old_usn, old_section_id, was_active = student.usn, student.section_id, student.active
     student.usn = str(values["usn"])
     student.name = str(values["name"])
     student.department = str(values["department"])
     student.semester = int(values["semester"])
     student.section_id = values["section_id"]
     student.active = bool(values["active"])
+    enrolment.retire_device_identity(
+        db, student, old_usn=old_usn, old_section_id=old_section_id, was_active=was_active
+    )
     after = {
         "usn": student.usn,
         "name": student.name,

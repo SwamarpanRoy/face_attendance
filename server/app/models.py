@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import datetime, time
+from datetime import UTC, datetime, time
 from typing import Any, ClassVar
 
 from sqlalchemy import (
@@ -134,6 +134,16 @@ class Student(Base):
     section_id: Mapped[int | None] = mapped_column(ForeignKey("sections.id"), index=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Bumped by every change to the row, so an incremental template sync also re-sends
+    # students whose name or section changed (devices show the cached name on a match).
+    # Wall-clock time from Python, not now(): now() is the transaction *start* and could
+    # fall before a device's last sync, like FaceTemplate.created_at set in services.
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=lambda: datetime.now(UTC),
+        index=True,
+    )
 
     section: Mapped[Section | None] = relationship(back_populates="students")
     consents: Mapped[list[Consent]] = relationship(back_populates="student")
