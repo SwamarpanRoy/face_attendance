@@ -21,6 +21,7 @@ from fastapi.templating import Jinja2Templates
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from starlette import status
 
+from server.app.admin.icons import icon
 from server.app.auth import SessionCodec
 from server.app.config import Settings
 from server.app.models import Faculty, Role
@@ -82,7 +83,14 @@ class Renderer:
 
     def __init__(self, settings: Settings, codec: SessionCodec) -> None:
         self.templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
-        self.templates.env.globals.update(app_name=settings.app_name, url_with=url_with)
+        # Cache-busting stamp for /static/app.css: browsers refetch it after every change.
+        stylesheet = STATIC_DIR / "app.css"
+        self.templates.env.globals.update(
+            app_name=settings.app_name,
+            url_with=url_with,
+            icon=icon,
+            asset_version=str(int(stylesheet.stat().st_mtime)) if stylesheet.exists() else "0",
+        )
         # ``ids|zip(names)|list`` builds (value, label) pairs for the select macro.
         self.templates.env.filters["zip"] = zip
         self.templates.env.filters["local"] = self._local

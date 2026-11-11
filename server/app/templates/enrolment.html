@@ -30,7 +30,7 @@
   <h3>Bulk imports</h3>
   <p class="muted">Run on the server: <code>python tools/enroll_bulk.py --photos idcards/ --consents consents.csv --report report.csv</code>. The report lists every rejected photo with its reason.</p>
   {% if imports %}
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>When</th><th>Accepted</th><th>Rejected</th><th>Photos</th><th>Report</th></tr></thead>
     <tbody>
     {% for i in imports %}
@@ -43,7 +43,7 @@
       </tr>
     {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   {% else %}
   <p class="muted">No bulk imports yet.</p>
   {% endif %}

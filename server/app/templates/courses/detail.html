@@ -11,7 +11,7 @@
 </div>
 
 <h3>Sections and faculty</h3>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>Section</th><th>Faculty</th><th></th></tr></thead>
   <tbody>
   {% for o in course.offerings %}
@@ -30,7 +30,7 @@
     <tr><td colspan="3" class="muted">This course is not assigned to any section yet.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 
 {% if is_admin %}
 <article>

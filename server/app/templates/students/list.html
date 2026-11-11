@@ -17,7 +17,7 @@
   <button type="submit" class="secondary">Filter</button>
 </form>
 
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>USN</th><th>Name</th><th>Section</th><th>Sem</th><th>Templates</th><th>Consent</th><th></th></tr></thead>
   <tbody>
   {% for student, templates, consented in rows %}
@@ -34,6 +34,6 @@
     <tr><td colspan="7" class="muted">No students match.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% include "_pagination.html" %}
 {% endblock %}

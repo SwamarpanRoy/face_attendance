@@ -16,7 +16,7 @@
   </select>
   <button type="submit" class="secondary">Show</button>
 </form>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>Started</th><th>Ended</th><th>Course</th><th>Section</th><th>Faculty</th><th>Present</th><th>Status</th></tr></thead>
   <tbody>
   {% for s in sessions %}
@@ -33,5 +33,5 @@
     <tr><td colspan="7" class="muted">No sessions on {{ day.strftime('%d %b %Y') }}.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}

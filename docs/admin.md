@@ -4,6 +4,18 @@ Server-rendered Jinja2 + HTMX, no JavaScript build, works on a phone browser. Si
 with a faculty/admin account (argon2 passwords, HttpOnly session cookie, CSRF token on
 every form). Device PINs never work here.
 
+## Look and layout
+
+Dark, calm, shared with the Pi device: a frosted sidebar with grouped navigation on
+laptops (a top bar with a menu button under 960 px), cards with soft shadows, status
+pills, a live roster with a progress bar, Inter (vendored, OFL) and Lucide icons
+(ISC, inlined by `server/app/admin/icons.py`; use `{{ icon("name") }}` in templates).
+All styling is our own `server/app/static/app.css` (no CSS framework, no build step); it
+styles plain tables, forms and buttons, so new pages look right without extra classes.
+Wrap a list table in `<div class="table-wrap">` so it scrolls on phones. The stylesheet
+URL carries a version stamp, so browsers pick up CSS changes at once.
+`tests/server/test_icons.py` fails if a template uses an icon name that does not exist.
+
 ## Roles
 
 | | admin | faculty |

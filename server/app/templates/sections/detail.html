@@ -15,9 +15,9 @@
   <strong>Import finished:</strong> {{ import_result.created }} added, {{ import_result.updated }} updated, {{ import_result.rejected|length }} rejected.
   {% if import_result.rejected %}
   <details><summary>Rejected rows</summary>
-    <table><thead><tr><th>Row</th><th>USN</th><th>Reason</th></tr></thead><tbody>
+    <div class="table-wrap"><table><thead><tr><th>Row</th><th>USN</th><th>Reason</th></tr></thead><tbody>
     {% for row_no, usn, reason in import_result.rejected %}<tr><td>{{ row_no }}</td><td>{{ usn }}</td><td>{{ reason }}</td></tr>{% endfor %}
-    </tbody></table>
+    </tbody></table></div>
   </details>
   {% endif %}
 </article>
@@ -42,7 +42,7 @@
 </div>
 
 <h3>Students</h3>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>USN</th><th>Name</th><th>Sem</th><th></th></tr></thead>
   <tbody>
   {% for s in students %}
@@ -56,5 +56,5 @@
     <tr><td colspan="4" class="muted">No students in this section yet.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}

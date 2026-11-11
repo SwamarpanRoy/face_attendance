@@ -4,7 +4,7 @@
 {% block content %}
 <h1>Timetable periods</h1>
 <p class="muted">The device asks for course, section and period when a session starts. Periods are campus-wide.</p>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>#</th><th>Name</th><th>Start</th><th>End</th><th></th></tr></thead>
   <tbody>
   {% for p in periods %}
@@ -25,7 +25,7 @@
     <tr><td colspan="5" class="muted">No periods defined yet.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 
 {% if is_admin %}
 <article>

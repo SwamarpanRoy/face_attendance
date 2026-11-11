@@ -16,7 +16,7 @@
   <input type="date" name="end" value="{{ end.isoformat() if end else '' }}">
   <button type="submit" class="secondary">Filter</button>
 </form>
-<table class="audit">
+<div class="table-wrap"><table class="audit">
   <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Entity</th><th>Reason</th><th>Before → after</th></tr></thead>
   <tbody>
   {% for row in rows %}
@@ -32,6 +32,6 @@
     <tr><td colspan="6" class="muted">Nothing matches.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% include "_pagination.html" %}
 {% endblock %}

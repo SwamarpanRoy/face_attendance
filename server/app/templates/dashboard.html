@@ -2,20 +2,30 @@
 {% from "_macros.html" import chip %}
 {% block title %}Dashboard · {{ app_name }}{% endblock %}
 {% block content %}
-<h1>Dashboard</h1>
+<div class="page-head">
+  <hgroup>
+    <span class="eyebrow">Overview</span>
+    <h1>Dashboard</h1>
+  </hgroup>
+  <a href="/admin/reports" role="button" class="secondary">{{ icon('chart-column', 16) }} Reports</a>
+</div>
+
 <div class="stats">
-  <article><small>Active students</small><strong>{{ counts.students }}</strong></article>
-  <article><small>Face templates</small><strong>{{ counts.templates }}</strong></article>
-  <article><small>Courses / sections</small><strong>{{ counts.courses }} / {{ counts.sections }}</strong></article>
-  <article><small>Devices online</small><strong>{{ counts.devices_online }} / {{ counts.devices_total }}</strong></article>
-  <article><small>Below {{ threshold|int }}% (90 days)</small><strong>{{ shortage_total }}</strong></article>
+  <article><span class="label">{{ icon('users', 16) }} Active students</span><strong>{{ counts.students }}</strong></article>
+  <article><span class="label">{{ icon('scan-face', 16) }} Face templates</span><strong>{{ counts.templates }}</strong></article>
+  <article><span class="label">{{ icon('book-open', 16) }} Courses / sections</span><strong>{{ counts.courses }} / {{ counts.sections }}</strong></article>
+  <article><span class="label">{{ icon('monitor-smartphone', 16) }} Devices online</span><strong>{{ counts.devices_online }} / {{ counts.devices_total }}</strong></article>
+  <article class="{{ 'alert' if shortage_total else '' }}"><span class="label">{{ icon('info', 16) }} Below {{ threshold|int }}% (90 days)</span><strong>{{ shortage_total }}</strong></article>
 </div>
 
 <div class="grid">
   <article>
-    <h3>Sessions today</h3>
+    <div class="card-head">
+      <h3>{{ icon('calendar-check') }} Sessions today</h3>
+      <a href="/admin/sessions">All sessions {{ icon('chevron-right', 14) }}</a>
+    </div>
     {% if sessions_today %}
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Started</th><th>Course</th><th>Section</th><th>Present</th><th>Status</th></tr></thead>
       <tbody>
       {% for s in sessions_today %}
@@ -28,17 +38,19 @@
         </tr>
       {% endfor %}
       </tbody>
-    </table>
+    </table></div>
     {% else %}
-    <p class="muted">No sessions yet today.</p>
+    <p class="empty">{{ icon('calendar-check') }} No sessions yet today.</p>
     {% endif %}
-    <p><a href="/admin/sessions">All sessions</a></p>
   </article>
 
   <article>
-    <h3>Devices</h3>
+    <div class="card-head">
+      <h3>{{ icon('monitor-smartphone') }} Devices</h3>
+      {% if is_admin %}<a href="/admin/devices">Manage devices {{ icon('chevron-right', 14) }}</a>{% endif %}
+    </div>
     {% if devices %}
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Device</th><th>Last seen</th><th>Queue</th><th></th></tr></thead>
       <tbody>
       {% for d in devices %}
@@ -50,9 +62,9 @@
         </tr>
       {% endfor %}
       </tbody>
-    </table>
+    </table></div>
     {% else %}
-    <p class="muted">No devices registered.</p>
+    <p class="empty">{{ icon('monitor-smartphone') }} No devices registered.</p>
     {% endif %}
     {% if warnings %}
     <h4>Sync warnings</h4>
@@ -60,14 +72,16 @@
       {% for device, text in warnings %}<li><strong>{{ device.name }}</strong>: {{ text }}</li>{% endfor %}
     </ul>
     {% endif %}
-    {% if is_admin %}<p><a href="/admin/devices">Manage devices</a></p>{% endif %}
   </article>
 </div>
 
 <article>
-  <h3>Students below {{ threshold|int }}% (last 90 days)</h3>
+  <div class="card-head">
+    <h3>{{ icon('info') }} Students below {{ threshold|int }}% (last 90 days)</h3>
+    <a href="/admin/reports?view=shortage">Shortage report {{ icon('chevron-right', 14) }}</a>
+  </div>
   {% if shortage %}
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>USN</th><th>Name</th><th>Course</th><th>Attended / held</th><th>%</th></tr></thead>
     <tbody>
     {% for r in shortage %}
@@ -76,14 +90,14 @@
         <td>{{ r.name }}</td>
         <td>{{ r.course_code }}</td>
         <td>{{ r.attended }} / {{ r.counted }}</td>
-        <td>{{ '%.0f'|format(r.percentage) }}%</td>
+        <td>{{ chip('%.0f'|format(r.percentage) ~ '%', 'bad') }}</td>
       </tr>
     {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   {% if shortage_total > shortage|length %}<p class="muted">{{ shortage_total - shortage|length }} more in the <a href="/admin/reports?view=shortage">shortage report</a>.</p>{% endif %}
   {% else %}
-  <p class="muted">Nobody below the threshold in the last 90 days.</p>
+  <p class="empty">{{ icon('check') }} Nobody below the threshold in the last 90 days.</p>
   {% endif %}
 </article>
 {% endblock %}
