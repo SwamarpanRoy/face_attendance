@@ -37,7 +37,7 @@ from device.app.enrol import Capture, EnrolmentFlow
 from device.app.pins import FacultyRef
 from device.app.pipeline import PipelineWorker, annotate
 from device.app.ui.pinpad import BUTTON_HEIGHT, NumberPad
-from device.app.ui.theme import font, set_props
+from device.app.ui.theme import font, paint_backdrop, set_props
 
 log = logging.getLogger(__name__)
 CAPTURE_GAP_MS = 700
@@ -62,6 +62,7 @@ class EnrolDialog(QDialog):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        self._backdrop: dict[str, QPixmap] = {}
         self.setWindowTitle("Enrol a student")
         self.setModal(True)
         self.flow = flow
@@ -89,6 +90,9 @@ class EnrolDialog(QDialog):
         self.worker.capture_ready.connect(self.on_capture)
         self.worker.gate_message.connect(self.on_gate)
         self._load_sections()
+
+    def paintEvent(self, event) -> None:  # noqa: N802, ANN001 - Qt override
+        paint_backdrop(self, self._backdrop)
 
     # ------------------------------------------------------------------ page builders
     def _build_pick_page(self) -> QWidget:

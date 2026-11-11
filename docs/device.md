@@ -25,11 +25,15 @@ PINs are verified **offline** against argon2 hashes synced from the server (5 wr
 tries lock the pad for 60 s). Before the first catalog sync the device asks the
 server. PINs never work as dashboard passwords.
 
-**Look.** Dark and camera-first: near-black background, a large thin clock and stat
-tiles on Idle, a 3-step progress bar with large card choices on Start session, and on Live
-the camera fills the width with a floating glass bar (course · section · period and an
-"X / Y present" pill) and a floating result card (green *Face matched*, amber *Already
-marked*, red *Not recognised*). All colours, borders and radii live in
+**Look.** Dark glass, camera-first. Every screen sits on a soft "aurora" backdrop
+(violet, cyan, pink and blue colour fields on near-black, painted once per window size and
+cached) with translucent glass panels that have a lit top edge; the main actions are solid
+white glass. Idle has a large thin clock and stat tiles; Start session a 3-step progress
+bar and large card choices; on Live the camera fills the width and the floating top bar
+(course · section · period, "X / Y present") and result card (green *Face matched*, amber
+*Already marked*, red *Not recognised*) are **real frosted glass**: `theme.frost()` blurs
+the video strip behind each panel every frame (downscale-blur-upscale, about 0.8 ms per
+frame for both panels on a laptop). All colours, borders and radii live in
 `device/app/ui/theme.py` (token names after shadcn/ui); widgets only declare what they
 are with `theme.set_props(widget, variant=…, role=…, tone=…)`, so change the look there,
 not in the screens. Fonts are pixel-sized via `theme.font()`. Every screen must fit the

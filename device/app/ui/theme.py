@@ -1,105 +1,102 @@
-"""Dark, camera-first look for the whole device UI (one Qt stylesheet + palette).
+"""Dark glass look for the whole device UI: aurora backdrop, translucent panels, frost.
 
-Why dark: the device sits in bright classrooms and the camera preview is the hero of the
-Live screen; a near-black UI frames the video, keeps glare low on a small glossy panel
-and lets one status colour (green match, amber already-marked, red not-recognised) carry
-the meaning at a glance. The token names follow shadcn/ui (background, card, muted,
-primary, destructive), translated to Qt because the device runs PyQt5, not a web stack.
+Why: the device sits in bright classrooms and the camera preview is the hero of the Live
+screen. A dark backdrop with soft colour fields keeps glare low on a small glossy panel,
+translucent "glass" panels with a lit top edge give depth without heavy chrome, and one
+status colour (green match, amber already-marked, red not-recognised) carries meaning.
+
+Qt has no backdrop blur, so the glass is built two cheap ways: on static screens the
+backdrop is already soft (radial colour fields), so translucent panels over it read as
+frosted with no per-frame work (the backdrop is painted once per size and cached by the
+caller); over the live camera, :func:`frost` really blurs the video strip behind each
+floating panel (downscale-blur-upscale, a few ms on a Pi 5).
 
 Widgets only declare *what* they are through dynamic properties (``variant`` on buttons,
 ``role`` and ``tone`` on labels and frames) and this module decides how that looks, so
 colours live in one place. Sizes are set by the screens (pixel fonts via :func:`font`)
-because the layout is measured to fit a 480x800 panel.
+because the layout is measured to fit a 480x800 panel. Token names follow shadcn/ui.
 """
 
 from __future__ import annotations
 
-from PyQt5.QtGui import QColor, QFont, QPalette
+import cv2
+import numpy as np
+from PyQt5.QtCore import QPointF, QSize
+from PyQt5.QtGui import QColor, QFont, QPainter, QPalette, QPixmap, QRadialGradient
 from PyQt5.QtWidgets import QApplication, QWidget
 
+from common.face.types import Array
+
 COLORS = {
-    "background": "#09090b",
-    "card": "#18181b",
-    "card_pressed": "#27272a",
-    "border": "#27272a",
-    "border_strong": "#3f3f46",
+    "background": "#07070d",
     "foreground": "#fafafa",
-    "muted": "#a1a1aa",
-    "subtle": "#71717a",
-    "primary": "#fafafa",
-    "primary_foreground": "#09090b",
-    "primary_pressed": "#d4d4d8",
-    "ok": "#34d399",
-    "ok_solid": "#059669",
-    "warn": "#fbbf24",
-    "warn_solid": "#d97706",
-    "error": "#f87171",
-    "error_solid": "#dc2626",
+    "muted": "#c4c4cc",
+    "subtle": "#8b8b99",
+    "primary_foreground": "#0b0b14",
+    "ok": "#6ee7b7",
+    "warn": "#fcd34d",
+    "error": "#fca5a5",
 }
 _C = COLORS
 
+# Glass recipe: translucent white fill, hairline border, brighter top edge (light catching
+# the rim). Tints are the same recipe in a status colour.
+_GLASS = (
+    "background: rgba(255, 255, 255, 0.08);"
+    " border: 1px solid rgba(255, 255, 255, 0.14);"
+    " border-top: 1px solid rgba(255, 255, 255, 0.30);"
+)
+_GLASS_STRONG = (
+    "background: rgba(255, 255, 255, 0.14);"
+    " border: 1px solid rgba(255, 255, 255, 0.20);"
+    " border-top: 1px solid rgba(255, 255, 255, 0.40);"
+)
+
+
+def _tint(rgb: str, fill: float, edge: float) -> str:
+    return (
+        f"background: rgba({rgb}, {fill});"
+        f" border: 1px solid rgba({rgb}, {edge});"
+        f" border-top: 1px solid rgba(255, 255, 255, 0.35);"
+    )
+
+
+_OK, _WARN, _ERR = "16, 185, 129", "245, 158, 11", "239, 68, 68"
+
 STYLESHEET = f"""
 QWidget {{ color: {_C["foreground"]}; }}
-QMainWindow, QDialog, QStackedWidget > QWidget {{ background: {_C["background"]}; }}
+QStackedWidget, QStackedWidget > QWidget {{ background: transparent; }}
 
 /* ---------------------------------------------------------------- buttons */
-QPushButton {{
-    background: {_C["card"]};
-    color: {_C["foreground"]};
-    border: 1px solid {_C["border"]};
-    border-radius: 16px;
-    padding: 0 16px;
-}}
-QPushButton:pressed {{ background: {_C["card_pressed"]}; }}
+QPushButton {{ {_GLASS} border-radius: 18px; padding: 0 16px; color: {_C["foreground"]}; }}
+QPushButton:pressed {{ background: rgba(255, 255, 255, 0.18); }}
 QPushButton:disabled {{ color: {_C["subtle"]}; }}
 QPushButton[variant="primary"] {{
-    background: {_C["primary"]};
+    background: rgba(255, 255, 255, 0.92);
     color: {_C["primary_foreground"]};
-    border: none;
-    border-radius: 20px;
-}}
-QPushButton[variant="primary"]:pressed {{ background: {_C["primary_pressed"]}; }}
-QPushButton[variant="accent"] {{
-    background: {_C["ok_solid"]};
-    color: #ffffff;
-    border: none;
-    border-radius: 20px;
-}}
-QPushButton[variant="destructive"] {{
-    background: rgba(239, 68, 68, 0.14);
-    color: {_C["error"]};
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    border-radius: 18px;
-}}
-QPushButton[variant="destructive"]:pressed {{ background: rgba(239, 68, 68, 0.28); }}
-QPushButton[variant="ghost"] {{
-    background: transparent;
-    color: {_C["muted"]};
-    border: none;
-}}
-QPushButton[variant="ghost"]:pressed {{ color: {_C["foreground"]}; }}
-QPushButton[variant="key"] {{
-    background: {_C["card"]};
-    border: 1px solid {_C["border"]};
+    border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 22px;
 }}
+QPushButton[variant="primary"]:pressed {{ background: rgba(255, 255, 255, 0.72); }}
+QPushButton[variant="accent"] {{ {_tint(_OK, 0.55, 0.7)} border-radius: 22px; color: #ffffff; }}
+QPushButton[variant="destructive"] {{
+    {_tint(_ERR, 0.18, 0.45)} border-radius: 20px; color: {_C["error"]};
+}}
+QPushButton[variant="destructive"]:pressed {{ background: rgba({_ERR}, 0.32); }}
+QPushButton[variant="ghost"] {{ background: transparent; border: none; color: {_C["muted"]}; }}
+QPushButton[variant="ghost"]:pressed {{ color: {_C["foreground"]}; }}
+QPushButton[variant="key"] {{ {_GLASS} border-radius: 24px; }}
 
 /* ---------------------------------------------------------------- surfaces */
-QFrame[role="card"] {{
-    background: {_C["card"]};
-    border: 1px solid {_C["border"]};
-    border-radius: 18px;
+QFrame[role="card"] {{ {_GLASS} border-radius: 20px; }}
+QFrame[role="glass"] {{ {_GLASS_STRONG} border-radius: 20px; }}
+QFrame[role="card"] QLabel, QFrame[role="glass"] QLabel {{
+    background: transparent; border: none;
 }}
-QFrame[role="glass"] {{
-    background: rgba(9, 9, 11, 0.62);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    border-radius: 18px;
-}}
-QFrame[role="card"] QLabel, QFrame[role="glass"] QLabel {{ background: transparent; border: none; }}
 QScrollArea[role="plain"], QScrollArea[role="plain"] > QWidget > QWidget {{
     background: transparent; border: none;
 }}
-QFrame[role="step"] {{ background: {_C["border_strong"]}; border-radius: 2px; }}
+QFrame[role="step"] {{ background: rgba(255, 255, 255, 0.16); border-radius: 2px; }}
 QFrame[role="step"][tone="active"] {{ background: {_C["foreground"]}; }}
 
 /* ---------------------------------------------------------------- text */
@@ -109,92 +106,117 @@ QLabel[role="eyebrow"] {{ color: {_C["subtle"]}; font-weight: 600; }}
 QLabel[role="danger"] {{ color: {_C["error"]}; }}
 QLabel[role="caption"] {{ color: {_C["subtle"]}; font-size: 10px; }}
 
-/* Pill badge with a status tone (server status, present counter). */
 QLabel[role="badge"] {{
-    border-radius: 14px;
-    padding: 5px 12px;
-    font-weight: 600;
-    color: {_C["muted"]};
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    {_GLASS} border-radius: 14px; padding: 5px 12px; font-weight: 600; color: {_C["muted"]};
 }}
-QLabel[role="badge"][tone="ok"] {{
-    color: {_C["ok"]}; background: rgba(16, 185, 129, 0.14);
-    border: 1px solid rgba(16, 185, 129, 0.35);
-}}
-QLabel[role="badge"][tone="warn"] {{
-    color: {_C["warn"]}; background: rgba(245, 158, 11, 0.14);
-    border: 1px solid rgba(245, 158, 11, 0.35);
-}}
-QLabel[role="badge"][tone="error"] {{
-    color: {_C["error"]}; background: rgba(239, 68, 68, 0.14);
-    border: 1px solid rgba(239, 68, 68, 0.35);
-}}
+QLabel[role="badge"][tone="ok"] {{ {_tint(_OK, 0.20, 0.55)} color: {_C["ok"]}; }}
+QLabel[role="badge"][tone="warn"] {{ {_tint(_WARN, 0.20, 0.55)} color: {_C["warn"]}; }}
+QLabel[role="badge"][tone="error"] {{ {_tint(_ERR, 0.20, 0.55)} color: {_C["error"]}; }}
 
-/* Inline alert (Not calibrated, clock not synced). */
-QLabel[role="alert"] {{ border-radius: 14px; padding: 10px 14px; font-weight: 600; }}
-QLabel[role="alert"][tone="warn"] {{
-    color: {_C["warn"]}; background: rgba(245, 158, 11, 0.10);
-    border: 1px solid rgba(245, 158, 11, 0.30);
-}}
-QLabel[role="alert"][tone="error"] {{
-    color: {_C["error"]}; background: rgba(239, 68, 68, 0.10);
-    border: 1px solid rgba(239, 68, 68, 0.30);
-}}
+QLabel[role="alert"] {{ border-radius: 16px; padding: 10px 14px; font-weight: 600; }}
+QLabel[role="alert"][tone="warn"] {{ {_tint(_WARN, 0.14, 0.40)} color: {_C["warn"]}; }}
+QLabel[role="alert"][tone="error"] {{ {_tint(_ERR, 0.14, 0.40)} color: {_C["error"]}; }}
 
-/* Live result card floating over the video. */
-QLabel[role="banner"] {{ border-radius: 20px; padding: 14px 18px; color: #ffffff; }}
-QLabel[role="banner"][tone="neutral"] {{
-    background: rgba(9, 9, 11, 0.72); border: 1px solid rgba(255, 255, 255, 0.12);
-}}
-QLabel[role="banner"][tone="ok"] {{
-    background: {_C["ok_solid"]}; border: 2px solid {_C["ok"]};
-}}
-QLabel[role="banner"][tone="warn"] {{
-    background: {_C["warn_solid"]}; border: 2px solid {_C["warn"]};
-}}
-QLabel[role="banner"][tone="error"] {{
-    background: {_C["error_solid"]}; border: 2px solid {_C["error"]};
-}}
+/* Result card floating over the (frosted) video. */
+QLabel[role="banner"] {{ border-radius: 22px; padding: 14px 18px; color: #ffffff; }}
+QLabel[role="banner"][tone="neutral"] {{ {_GLASS_STRONG} }}
+QLabel[role="banner"][tone="ok"] {{ {_tint(_OK, 0.62, 0.85)} }}
+QLabel[role="banner"][tone="warn"] {{ {_tint(_WARN, 0.62, 0.85)} }}
+QLabel[role="banner"][tone="error"] {{ {_tint(_ERR, 0.62, 0.85)} }}
 
 QLabel[role="video"] {{ background: #000000; color: {_C["subtle"]}; }}
-QLabel[role="video"][tone="rounded"] {{ border-radius: 20px; }}
+QLabel[role="video"][tone="rounded"] {{ border-radius: 22px; }}
 
 /* ---------------------------------------------------------------- lists */
 QListWidget {{ background: transparent; border: none; outline: 0; }}
 QListWidget::item {{
-    background: {_C["card"]};
-    border: 1px solid {_C["border"]};
-    border-radius: 16px;
-    padding: 16px 18px;
-    margin: 0 0 8px 0;
+    {_GLASS} border-radius: 18px; padding: 16px 18px; margin: 0 0 8px 0;
     color: {_C["foreground"]};
 }}
 QListWidget::item:selected {{
-    background: {_C["primary"]};
+    background: rgba(255, 255, 255, 0.92);
     color: {_C["primary_foreground"]};
-    border: 1px solid {_C["primary"]};
+    border: 1px solid rgba(255, 255, 255, 0.95);
 }}
 
 /* ---------------------------------------------------------------- inputs */
-QLineEdit {{
-    background: {_C["card"]};
-    border: 1px solid {_C["border"]};
-    border-radius: 14px;
-    padding: 8px 12px;
-}}
+QLineEdit {{ {_GLASS} border-radius: 16px; padding: 8px 12px; }}
 QLineEdit[role="pin"] {{ background: transparent; border: none; }}
-QTextEdit, QPlainTextEdit, QTextBrowser {{
-    background: {_C["card"]};
-    border: 1px solid {_C["border"]};
-    border-radius: 16px;
-    padding: 12px;
+QTextEdit, QPlainTextEdit, QTextBrowser {{ {_GLASS} border-radius: 18px; padding: 12px; }}
+QComboBox {{ {_GLASS} border-radius: 14px; padding: 8px 12px; }}
+QComboBox::drop-down {{ border: none; width: 28px; }}
+QComboBox QAbstractItemView {{
+    background: #16161f; border: 1px solid rgba(255, 255, 255, 0.14);
+    selection-background-color: rgba(255, 255, 255, 0.92);
+    selection-color: {_C["primary_foreground"]};
 }}
 QScrollBar:vertical {{ background: transparent; width: 6px; margin: 4px 0; }}
-QScrollBar::handle:vertical {{ background: {_C["border_strong"]}; border-radius: 3px; }}
+QScrollBar::handle:vertical {{ background: rgba(255, 255, 255, 0.25); border-radius: 3px; }}
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: none; }}
 """
+
+# Soft colour fields of the backdrop: (centre x, centre y as a fraction of the size,
+# radius as a fraction of the larger side, RGBA at the centre).
+_AURORA = (
+    (0.10, 0.08, 0.75, (124, 58, 237, 150)),  # violet, top left
+    (0.95, 0.45, 0.70, (6, 182, 212, 110)),  # cyan, right
+    (0.20, 0.95, 0.80, (236, 72, 153, 95)),  # pink, bottom left
+    (0.80, 1.05, 0.55, (59, 130, 246, 110)),  # blue, bottom right
+)
+
+
+def backdrop(size: QSize) -> QPixmap:
+    """The aurora background at ``size``; callers cache it and repaint only on resize."""
+    pixmap = QPixmap(max(size.width(), 1), max(size.height(), 1))
+    pixmap.fill(QColor(_C["background"]))
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.Antialiasing)
+    longest = max(pixmap.width(), pixmap.height())
+    for fx, fy, fr, (r, g, b, a) in _AURORA:
+        centre = QPointF(fx * pixmap.width(), fy * pixmap.height())
+        gradient = QRadialGradient(centre, fr * longest)
+        gradient.setColorAt(0.0, QColor(r, g, b, a))
+        gradient.setColorAt(1.0, QColor(r, g, b, 0))
+        painter.fillRect(pixmap.rect(), gradient)
+    painter.end()
+    return pixmap
+
+
+def paint_backdrop(widget: QWidget, cache: dict[str, QPixmap]) -> None:
+    """Paint the cached backdrop behind ``widget`` (call from its paintEvent)."""
+    current = cache.get("pixmap")
+    if current is None or current.size() != widget.size():
+        current = backdrop(widget.size())
+        cache["pixmap"] = current
+    painter = QPainter(widget)
+    painter.drawPixmap(0, 0, current)
+    painter.end()
+
+
+def frost(image: Array, x: int, y: int, w: int, h: int, *, radius: int) -> None:
+    """Blur ``image[y:y+h, x:x+w]`` in place inside a rounded rectangle (frosted glass).
+
+    Downscale, blur, upscale: a strong blur for a few ms on a Pi 5, which is what lets
+    the floating panels over the live camera look like real glass.
+    """
+    x0, y0 = max(x, 0), max(y, 0)
+    x1, y1 = min(x + w, image.shape[1]), min(y + h, image.shape[0])
+    if x1 - x0 < 8 or y1 - y0 < 8:
+        return
+    region = image[y0:y1, x0:x1]
+    rh, rw = region.shape[:2]
+    small = cv2.resize(region, (max(rw // 8, 1), max(rh // 8, 1)), interpolation=cv2.INTER_AREA)
+    small = cv2.GaussianBlur(small, (0, 0), 1.5)
+    blurred = cv2.resize(small, (rw, rh), interpolation=cv2.INTER_LINEAR)
+    mask = np.zeros((rh, rw), np.uint8)
+    r = max(min(radius, rw // 2, rh // 2), 0)
+    cv2.rectangle(mask, (r, 0), (rw - 1 - r, rh - 1), 255, -1)
+    cv2.rectangle(mask, (0, r), (rw - 1, rh - 1 - r), 255, -1)
+    for cx, cy in ((r, r), (rw - 1 - r, r), (r, rh - 1 - r), (rw - 1 - r, rh - 1 - r)):
+        cv2.circle(mask, (cx, cy), r, 255, -1, lineType=cv2.LINE_AA)
+    alpha = (mask.astype(np.float32) / 255.0)[:, :, None]
+    region[:] = (blurred * alpha + region * (1.0 - alpha)).astype(np.uint8)
 
 
 def font(px: int, weight: int = QFont.Normal) -> QFont:
@@ -206,19 +228,19 @@ def font(px: int, weight: int = QFont.Normal) -> QFont:
 
 
 def _palette() -> QPalette:
-    """Dark palette for what the stylesheet does not reach (combo popups, selections)."""
+    """Dark palette for what the stylesheet does not reach (popups, selections)."""
     palette = QPalette()
     for role, color in (
         (QPalette.Window, _C["background"]),
         (QPalette.WindowText, _C["foreground"]),
-        (QPalette.Base, _C["card"]),
-        (QPalette.AlternateBase, _C["card_pressed"]),
+        (QPalette.Base, "#16161f"),
+        (QPalette.AlternateBase, "#1f1f2b"),
         (QPalette.Text, _C["foreground"]),
-        (QPalette.Button, _C["card"]),
+        (QPalette.Button, "#16161f"),
         (QPalette.ButtonText, _C["foreground"]),
-        (QPalette.Highlight, _C["primary"]),
+        (QPalette.Highlight, "#f4f4f5"),
         (QPalette.HighlightedText, _C["primary_foreground"]),
-        (QPalette.ToolTipBase, _C["card"]),
+        (QPalette.ToolTipBase, "#16161f"),
         (QPalette.ToolTipText, _C["foreground"]),
         (QPalette.PlaceholderText, _C["subtle"]),
     ):

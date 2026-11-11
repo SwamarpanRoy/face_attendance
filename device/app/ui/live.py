@@ -17,7 +17,8 @@ import logging
 from collections import deque
 
 import cv2
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot
+import numpy as np
+from PyQt5.QtCore import QPoint, QRect, Qt, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QFrame,
@@ -35,7 +36,7 @@ from common.face.matcher import Outcome
 from common.face.types import Array
 from device.app.enrol import Capture
 from device.app.pipeline import PipelineWorker, annotate
-from device.app.ui.theme import font, set_props
+from device.app.ui.theme import font, frost, set_props
 
 log = logging.getLogger(__name__)
 
@@ -70,6 +71,16 @@ class Banner(QLabel):
     def _release(self) -> None:
         text, kind = self._fallback
         self.show_message(text, kind)
+
+
+def _fill(image: Array, width: int, height: int) -> Array:
+    """Scale to cover ``width`` x ``height`` and crop the overflow (full-bleed, no bars)."""
+    src_h, src_w = image.shape[:2]
+    scale = max(width / src_w, height / src_h)
+    scaled_w, scaled_h = max(round(src_w * scale), width), max(round(src_h * scale), height)
+    scaled = cv2.resize(image, (scaled_w, scaled_h), interpolation=cv2.INTER_AREA)
+    x0, y0 = (scaled_w - width) // 2, (scaled_h - height) // 2
+    return np.ascontiguousarray(scaled[y0 : y0 + height, x0 : x0 + width])
 
 
 def _overlay(widget: QWidget, *, top: bool) -> QWidget:
@@ -107,6 +118,7 @@ class LiveScreen(QWidget):
         set_props(self.counter, role="badge", tone="ok")
         bar = QFrame()
         set_props(bar, role="glass")
+        self.bar = bar
         bar_layout = QHBoxLayout()
         bar_layout.setContentsMargins(14, 10, 10, 10)
         bar_layout.setSpacing(10)
@@ -201,18 +213,26 @@ class LiveScreen(QWidget):
     def on_frame(self, frame: Array, result: FrameResult) -> None:
         if not self.isVisible():
             return
-        canvas = annotate(frame, result)
-        rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
-        height, width, _ = rgb.shape
+        width, height = self.video.width(), self.video.height()
+        if width < 2 or height < 2:
+            return
+        view = _fill(annotate(frame, result), width, height)
+        # Frosted glass: blur the video strip behind each floating panel.
+        for rect in self._glass_rects():
+            frost(view, rect.x(), rect.y(), rect.width(), rect.height(), radius=20)
+        rgb = cv2.cvtColor(view, cv2.COLOR_BGR2RGB)
         image = QImage(rgb.data, width, height, 3 * width, QImage.Format_RGB888).copy()
-        # Fill the stage (crop the overflow) rather than letterbox: full-bleed camera.
-        pixmap = QPixmap.fromImage(image).scaled(
-            self.video.width(),
-            self.video.height(),
-            Qt.KeepAspectRatioByExpanding,
-            Qt.SmoothTransformation,
-        )
-        self.video.setPixmap(pixmap)
+        self.video.setPixmap(QPixmap.fromImage(image))
+
+    def _glass_rects(self) -> list[QRect]:
+        """Where the visible overlays sit, in video coordinates (they are siblings)."""
+        origin = self.video.mapToGlobal(QPoint(0, 0))
+        rects = []
+        for widget in (self.bar, self.banner):
+            if widget.isVisible():
+                top_left = widget.mapToGlobal(QPoint(0, 0)) - origin
+                rects.append(QRect(top_left, widget.size()))
+        return rects
 
     @pyqtSlot(str, str)
     def on_gate(self, message: str, reason: str) -> None:

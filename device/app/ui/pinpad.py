@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtWidgets import (
     QDialog,
     QGridLayout,
@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import (
 )
 
 from device.app.pins import FacultyRef, PinLockedError, PinVerifier
-from device.app.ui.theme import font, set_props
+from device.app.ui.theme import font, paint_backdrop, set_props
 
 BUTTON_HEIGHT = 64
 
@@ -98,6 +98,7 @@ class PinDialog(QDialog):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        self._backdrop: dict[str, QPixmap] = {}
         self.setWindowTitle(title)
         self.setModal(True)
         self.verifier = verifier
@@ -132,6 +133,9 @@ class PinDialog(QDialog):
         layout.addLayout(row)
         self.setLayout(layout)
         self.resize(360, 560)
+
+    def paintEvent(self, event) -> None:  # noqa: N802, ANN001 - Qt override
+        paint_backdrop(self, self._backdrop)
 
     def _submit(self, pin: str) -> None:
         if not pin:

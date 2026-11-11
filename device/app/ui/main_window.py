@@ -13,6 +13,7 @@ from collections.abc import Callable
 from typing import Any
 
 from PyQt5.QtCore import QObject, Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QMainWindow, QStackedWidget
 
 from common.face.matcher import MatchConfig, Outcome, Recognizer, TemplateIndex
@@ -30,6 +31,7 @@ from device.app.ui.enrol import EnrolDialog
 from device.app.ui.live import LiveScreen
 from device.app.ui.pinpad import PinDialog
 from device.app.ui.screens import IdleScreen, SettingsScreen, StartSessionScreen
+from device.app.ui.theme import paint_backdrop
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +66,7 @@ class MainWindow(QMainWindow):
         fullscreen: bool = False,
     ) -> None:
         super().__init__()
+        self._backdrop: dict[str, QPixmap] = {}
         self.config = config
         self.store = store
         self.worker = worker
@@ -129,6 +132,9 @@ class MainWindow(QMainWindow):
         self.worker.start()
         if self.sync_worker is not None:
             self.sync_worker.start()
+
+    def paintEvent(self, event) -> None:  # noqa: N802, ANN001 - Qt override
+        paint_backdrop(self, self._backdrop)
 
     def closeEvent(self, event) -> None:  # noqa: N802, ANN001 - Qt override
         if self.sync_worker is not None:
