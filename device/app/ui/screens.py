@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
+    QSizePolicy,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -23,10 +24,7 @@ from PyQt5.QtWidgets import (
 
 from device.app.sync import SyncStatus
 from device.app.ui.pinpad import BUTTON_HEIGHT
-
-CHIP_ON = "background:#1b5e20;color:#fff;padding:4px 10px;border-radius:10px;"
-CHIP_OFF = "background:#b71c1c;color:#fff;padding:4px 10px;border-radius:10px;"
-CHIP_WARN = "background:#e65100;color:#fff;padding:4px 10px;border-radius:10px;"
+from device.app.ui.theme import set_props
 
 
 def big_button(text: str, *, primary: bool = False) -> QPushButton:
@@ -34,7 +32,7 @@ def big_button(text: str, *, primary: bool = False) -> QPushButton:
     button.setMinimumHeight(BUTTON_HEIGHT + 8 if primary else BUTTON_HEIGHT)
     button.setFont(QFont("Sans", 16 if primary else 14, QFont.Bold if primary else QFont.Normal))
     if primary:
-        button.setStyleSheet("background:#1d4ed8;color:#fff;border-radius:12px;")
+        set_props(button, variant="primary")
     return button
 
 
@@ -63,9 +61,11 @@ class IdleScreen(QWidget):
         self.clock.setAlignment(Qt.AlignCenter)
         self.date = QLabel("")
         self.date.setAlignment(Qt.AlignCenter)
+        set_props(self.date, role="muted")
 
         self.server_chip = QLabel("server: unknown")
-        self.server_chip.setStyleSheet(CHIP_OFF)
+        self.server_chip.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        set_props(self.server_chip, role="badge", tone="error")
         self.queue_label = QLabel("Queued records: 0")
         self.sync_label = QLabel("Last sync: never")
         self.network_label = QLabel("")
@@ -73,9 +73,12 @@ class IdleScreen(QWidget):
         # wrap instead of widening the window past a small panel.
         for label in (self.server_chip, self.queue_label, self.sync_label, self.network_label):
             label.setWordWrap(True)
+        for label in (self.queue_label, self.sync_label, self.network_label):
+            set_props(label, role="muted")
         self.warning = QLabel("")
         self.warning.setWordWrap(True)
-        self.warning.setStyleSheet("color:#e65100;font-weight:bold;")
+        set_props(self.warning, role="alert", tone="warn")
+        self.warning.setVisible(False)  # an empty alert would still draw its box
         self.message = QLabel("")
         self.message.setWordWrap(True)
         self.message.setAlignment(Qt.AlignCenter)
@@ -85,8 +88,10 @@ class IdleScreen(QWidget):
         info.addWidget(self.queue_label, 0, 1)
         info.addWidget(self.sync_label, 1, 0, 1, 2)
         info.addWidget(self.network_label, 2, 0, 1, 2)
+        info.setContentsMargins(14, 12, 14, 12)
+        info.setVerticalSpacing(6)
         box = QFrame()
-        box.setFrameShape(QFrame.StyledPanel)
+        set_props(box, role="card")
         box.setLayout(info)
 
         self.start_button = big_button("Start session", primary=True)
@@ -142,17 +147,17 @@ class IdleScreen(QWidget):
     ) -> None:
         if status is None:
             self.server_chip.setText("server: not configured")
-            self.server_chip.setStyleSheet(CHIP_WARN)
+            set_props(self.server_chip, tone="warn")
         elif status.revoked:
             self.server_chip.setText("server: DEVICE REVOKED")
-            self.server_chip.setStyleSheet(CHIP_OFF)
+            set_props(self.server_chip, tone="error")
         elif status.online:
             self.server_chip.setText("server: online")
-            self.server_chip.setStyleSheet(CHIP_ON)
+            set_props(self.server_chip, tone="ok")
         else:
             retry = f", retry in {int(status.retry_in_s)} s" if status.retry_in_s else ""
             self.server_chip.setText(f"server: offline{retry}")
-            self.server_chip.setStyleSheet(CHIP_OFF)
+            set_props(self.server_chip, tone="error")
         queue = status.queue_len if status else 0
         self.queue_label.setText(f"Queued records: {queue}")
         self.sync_label.setText(
@@ -164,6 +169,7 @@ class IdleScreen(QWidget):
         if not clock_synced:
             warnings.append("Clock not synced (no NTP): record times will be flagged.")
         self.warning.setText(" ".join(warnings))
+        self.warning.setVisible(bool(warnings))
 
     def set_resumable(self, resumable: bool) -> None:
         self.resume_button.setVisible(resumable)
@@ -185,7 +191,7 @@ class StartSessionScreen(QWidget):
         self.title.setAlignment(Qt.AlignCenter)
         self.hint = QLabel("")
         self.hint.setWordWrap(True)
-        self.hint.setStyleSheet("color:#b71c1c;")
+        set_props(self.hint, role="danger")
         self.pages = QStackedWidget()
         self.course_list = self._list()
         self.section_list = self._list()
@@ -212,7 +218,6 @@ class StartSessionScreen(QWidget):
     def _list() -> QListWidget:
         widget = QListWidget()
         widget.setFont(QFont("Sans", 15))
-        widget.setStyleSheet("QListWidget::item { padding: 14px; }")
         return widget
 
     def load(
@@ -310,11 +315,14 @@ class SettingsScreen(QWidget):
         self.info.setWordWrap(True)
         self.info.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.info.setFont(QFont("Monospace", 10))
+        set_props(self.info, role="code")
         self.calibration_warning = QLabel("")
         self.calibration_warning.setWordWrap(True)
-        self.calibration_warning.setStyleSheet("color:#e65100;font-weight:bold;")
+        set_props(self.calibration_warning, role="alert", tone="warn")
+        self.calibration_warning.setVisible(False)
         self.feedback = QLabel("")
         self.feedback.setWordWrap(True)
+        set_props(self.feedback, role="muted")
 
         sync = big_button("Sync now")
         sync.clicked.connect(self.sync_requested)
@@ -347,6 +355,7 @@ class SettingsScreen(QWidget):
             if calibrated
             else "NOT CALIBRATED: run tools/calibrate.py on the server, then Sync now."
         )
+        self.calibration_warning.setVisible(not calibrated)
 
     def show_feedback(self, text: str) -> None:
         self.feedback.setText(text)

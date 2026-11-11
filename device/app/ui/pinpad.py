@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
 )
 
 from device.app.pins import FacultyRef, PinLockedError, PinVerifier
+from device.app.ui.theme import set_props
 
 BUTTON_HEIGHT = 64
 
@@ -46,6 +47,10 @@ class NumberPad(QWidget):
             button = QPushButton(label)
             button.setMinimumHeight(BUTTON_HEIGHT)
             button.setFont(QFont("Sans", 18))
+            if label == "OK":
+                set_props(button, variant="primary")
+            elif label == "⌫":
+                set_props(button, variant="secondary")
             button.clicked.connect(lambda _checked, value=label: self._press(value))
             grid.addWidget(button, index // 3, index % 3)
         layout = QVBoxLayout()
@@ -100,6 +105,7 @@ class PinDialog(QDialog):
         self.message = QLabel("Enter your PIN")
         self.message.setAlignment(Qt.AlignCenter)
         self.message.setWordWrap(True)
+        set_props(self.message, role="muted")
         self.pad = NumberPad(max_length=12, masked=True)
         self.pad.submitted.connect(self._submit)
         cancel = QPushButton("Cancel")
@@ -109,8 +115,10 @@ class PinDialog(QDialog):
         row = QHBoxLayout()
         row.addWidget(cancel)
         layout = QVBoxLayout()
+        layout.addStretch(1)  # keep the heading with its message, above the pad
         layout.addWidget(self.heading)
         layout.addWidget(self.message)
+        layout.addSpacing(12)
         layout.addWidget(self.pad)
         layout.addLayout(row)
         self.setLayout(layout)

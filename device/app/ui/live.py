@@ -29,16 +29,12 @@ from common.face.matcher import Outcome
 from common.face.types import Array
 from device.app.enrol import Capture
 from device.app.pipeline import PipelineWorker, annotate
+from device.app.ui.theme import set_props
 
 log = logging.getLogger(__name__)
 
 PORTRAIT = (720, 1280)
-KIND_STYLES = {
-    "neutral": "background:#263238;color:#eceff1;",
-    "ok": "background:#1b5e20;color:#ffffff;",
-    "warn": "background:#e65100;color:#ffffff;",
-    "error": "background:#b71c1c;color:#ffffff;",
-}
+BANNER_TONES = ("neutral", "ok", "warn", "error")
 
 
 class Banner(QLabel):
@@ -61,9 +57,7 @@ class Banner(QLabel):
             self._fallback = (text, kind)  # remember, show after the held message
             return
         self.setText(text)
-        self.setStyleSheet(
-            KIND_STYLES.get(kind, KIND_STYLES["neutral"]) + "padding:12px;border-radius:12px;"
-        )
+        set_props(self, role="banner", tone=kind if kind in BANNER_TONES else "neutral")
         if hold_ms:
             self._hold.start(hold_ms)
 
@@ -91,6 +85,7 @@ class LiveScreen(QWidget):
         # pages share one size), so they must wrap: on a 480 px panel the header
         # "22EC72 Embedded Systems · ECE-7A · Period 6 15:00–16:00 · …" alone needed 660 px.
         self.header.setWordWrap(True)
+        set_props(self.header, role="muted")
         self.video = QLabel("Starting camera…")
         self.video.setAlignment(Qt.AlignCenter)
         # A QLabel holding a pixmap insists on at least the pixmap's size, and the pixmap
@@ -99,16 +94,16 @@ class LiveScreen(QWidget):
         # a 480x800 panel. Ignored = take whatever space the layout gives.
         self.video.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.video.setMinimumSize(160, 120)
-        self.video.setStyleSheet("background:#000;color:#9e9e9e;")
+        set_props(self.video, role="video")
         self.banner = Banner()
         self.counter = QLabel("Present: 0")
         self.counter.setFont(QFont("Sans", 15, QFont.Bold))
         self.recent = QLabel("")
         self.recent.setFont(QFont("Sans", 11))
         self.recent.setWordWrap(True)
-        self.recent.setStyleSheet("color:#546e7a;")
+        set_props(self.recent, role="muted")
         self.stats = QLabel("")
-        self.stats.setStyleSheet("color:#90a4ae;font-size:10px;")
+        set_props(self.stats, role="caption")
         self.stats.setWordWrap(True)  # updated from startup, even while hidden
 
         self.capture_button = QPushButton("Capture test template")
@@ -118,7 +113,7 @@ class LiveScreen(QWidget):
         self.end_button = QPushButton("End session")
         self.end_button.setMinimumHeight(64)
         self.end_button.setFont(QFont("Sans", 14, QFont.Bold))
-        self.end_button.setStyleSheet("background:#b71c1c;color:#fff;border-radius:12px;")
+        set_props(self.end_button, variant="destructive")
         self.end_button.clicked.connect(self.end_requested)
 
         buttons = QHBoxLayout()

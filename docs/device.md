@@ -25,6 +25,13 @@ PINs are verified **offline** against argon2 hashes synced from the server (5 wr
 tries lock the pad for 60 s). Before the first catalog sync the device asks the
 server. PINs never work as dashboard passwords.
 
+**Look.** All colours, borders and radii live in `device/app/ui/theme.py`, one Qt
+stylesheet modelled on shadcn/ui's "neutral" theme (near-black primary buttons, white
+outlined secondary buttons, red destructive, bordered cards, pill status badges, bordered
+alerts). Widgets only declare what they are with `theme.set_props(widget, variant=…,
+role=…, tone=…)`; change the look in `theme.py`, not in the screens. The stylesheet adds
+no sizes, so the 480×800 fit (tested in `tests/device/test_main_window.py`) is unaffected.
+
 ## Offline-first behaviour
 
 Everything the device needs is prefetched for **all sections assigned to it** at boot

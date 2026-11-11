@@ -37,6 +37,7 @@ from device.app.enrol import Capture, EnrolmentFlow
 from device.app.pins import FacultyRef
 from device.app.pipeline import PipelineWorker, annotate
 from device.app.ui.pinpad import BUTTON_HEIGHT, NumberPad
+from device.app.ui.theme import set_props
 
 log = logging.getLogger(__name__)
 CAPTURE_GAP_MS = 700
@@ -105,6 +106,7 @@ class EnrolDialog(QDialog):
         self.roster_list.itemClicked.connect(lambda item: self._choose(item))
         hint = QLabel("Type the last digits of the USN, or tap a name.")
         hint.setWordWrap(True)
+        set_props(hint, role="muted")
         cancel = _big(QPushButton("Cancel"))
         cancel.clicked.connect(self.reject)
         layout = QVBoxLayout()
@@ -125,8 +127,9 @@ class EnrolDialog(QDialog):
         self.consent_text.setReadOnly(True)
         self.consent_text.setFont(QFont("Sans", 12))
         self.consent_version_label = QLabel("")
+        set_props(self.consent_version_label, role="muted")
         agree = _big(QPushButton("I consent"))
-        agree.setStyleSheet("background:#1b5e20;color:#fff;")
+        set_props(agree, variant="primary")
         agree.clicked.connect(self._consent_given)
         decline = _big(QPushButton("Decline"))
         decline.clicked.connect(self.reject)
@@ -151,7 +154,7 @@ class EnrolDialog(QDialog):
         self.video.setMinimumHeight(300)
         # Same reason as LiveScreen.video: the preview must not dictate the dialog size.
         self.video.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        self.video.setStyleSheet("background:#000;")
+        set_props(self.video, role="video")
         self.capture_status = QLabel("")
         self.capture_status.setAlignment(Qt.AlignCenter)
         self.capture_status.setFont(QFont("Sans", 14))
@@ -173,6 +176,7 @@ class EnrolDialog(QDialog):
         self.done_text = QLabel("")
         self.done_text.setWordWrap(True)
         self.done_text.setAlignment(Qt.AlignCenter)
+        set_props(self.done_text, role="muted")
         self.retry_button = _big(QPushButton("Try again"))
         self.retry_button.clicked.connect(self._retry)
         close = _big(QPushButton("Close"))

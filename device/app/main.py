@@ -201,6 +201,7 @@ def run_app(config: DeviceConfig, args: argparse.Namespace) -> int:
     from device.app.pins import PinVerifier
     from device.app.pipeline import PipelineWorker
     from device.app.session import SessionManager
+    from device.app.ui import theme
     from device.app.ui.main_window import EXIT_RESTART, MainWindow
 
     try:
@@ -225,6 +226,7 @@ def run_app(config: DeviceConfig, args: argparse.Namespace) -> int:
     exit_code = {"code": 0}
 
     app = QApplication(sys.argv[:1])
+    theme.apply(app)
     worker = PipelineWorker(camera, engine, _empty_recognizer(config))
 
     def request_restart() -> None:
