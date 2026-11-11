@@ -25,6 +25,24 @@ PINs are verified **offline** against argon2 hashes synced from the server (5 wr
 tries lock the pad for 60 s). Before the first catalog sync the device asks the
 server. PINs never work as dashboard passwords.
 
+**How the UI is built.** The screens are Qt Quick (QML) in `device/app/ui/qml/`
+(`main.qml` cross-fades six pages: Idle, Start session, PIN, Live, Settings, Enrol). They
+hold no logic: every text they show is a property of `device/app/controller.py`
+(`DeviceController`) and every tap calls one of its slots, so the whole device can be
+tested without a screen (`tests/device/test_controller.py`), and
+`tests/device/test_qml.py` loads every page and fails on any QML error. PIN entry and
+enrolment are pages, not blocking dialogs: an action that needs a PIN continues once a
+valid one is entered; Cancel returns to where you were. Camera frames are annotated and
+downsized once by the controller and drawn by `VideoSurface` (`device/app/ui/video.py`).
+
+**Look.** Dark and calm: a near-black gradient, depth from soft shadows, the Inter font
+(bundled, OFL) and Lucide icons (ISC). Live is camera-first: the video fills the
+screen, and the top bar (course, section · period, "X/Y present") and the result card are
+**real frosted glass** (GPU blur of the video behind them). The card turns green with the
+name and USN on a match and stays up for 2.5 s; a later "Already marked" from the same
+face waits until it has been seen. Colours live in `qml/Theme.qml`, icons in
+`qml/icons.js` (regenerate from Lucide SVGs if you add one).
+
 ## Offline-first behaviour
 
 Everything the device needs is prefetched for **all sections assigned to it** at boot

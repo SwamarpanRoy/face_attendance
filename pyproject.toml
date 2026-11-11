@@ -66,6 +66,9 @@ ignore = [
 "server/alembic/**" = ["D", "ANN", "N999"]
 "**/__init__.py" = ["D104"]
 "conftest.py" = ["D"]
+# QML binds to Qt properties, signals and slots by their camelCase names.
+"device/app/controller.py" = ["N802", "N815"]
+"device/app/ui/video.py" = ["N802", "N815"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

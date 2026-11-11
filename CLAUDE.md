@@ -11,9 +11,9 @@ Pi-side pieces of M1 and M8 are written but unverified: run `docs/setup_pi.md`, 
 Milestone table: README.md. Per-area docs: `docs/`.
 
 **Actual hardware (2026-10):** Raspberry Pi 5 16 GB, Raspberry Pi AI Camera (IMX500,
-manual focus, on-sensor NPU unused), Raspberry Pi OS Trixie (Python 3.13). For now the
-Pi is used on an HDMI monitor with mouse/keyboard (no SSH yet, no touch display yet);
-the laptop is macOS. Older text that says Pi 4 2 GB / Camera Module 3 / Bookworm
+manual focus, on-sensor NPU unused), Raspberry Pi OS Trixie (Python 3.13), Waveshare 5"
+DSI LCD (B) touch panel (800x480, auto-detected, rotated to portrait 480x800). No SSH yet
+(the Pi is set up from its own desktop); the laptop is macOS. Older text that says Pi 4 2 GB / Camera Module 3 / Bookworm
 describes the original plan.
 
 ## Workflow
@@ -34,7 +34,7 @@ describes the original plan.
 - **Python 3.13** runs everywhere (Pi OS Trixie on the Pi, the laptop venv). Code stays
   3.11-compatible: ruff/mypy target 3.11, so do not use newer syntax in shared code.
   numpy is pinned to 2.2.4 on the laptop/server to match Trixie's apt numpy.
-- **Pi packages from apt:** picamera2, libcamera, PyQt5, numpy, opencv. The venv is
+- **Pi packages from apt:** picamera2, libcamera, PyQt5 (+ Qt Quick/QML), numpy, opencv. The venv is
   created with `--system-site-packages`. **Never add numpy or opencv to
   `device/requirements.txt`**; pip versions break picamera2's ABI.
 - **Inference on the Pi = onnxruntime directly.** No `insightface` package on the
@@ -64,9 +64,13 @@ describes the original plan.
   The consent notice must say that held-out test images are taken.
 - **Server:** FastAPI, PostgreSQL 16, SQLAlchemy 2.x, Alembic. Admin UI is
   server-rendered Jinja2 + HTMX, vendored static files, no JS build step.
-- **Device UI:** PyQt5 (apt on the Pi), portrait 720x1280, touch-first, big buttons.
-  No browser kiosk, no heavy frameworks (keep it lean even though the Pi 5 has 16 GB).
-  Until the touch display arrives it runs in a window on an HDMI monitor; mouse = touch.
+- **Device UI:** PyQt5 + **Qt Quick (QML)** from apt on the Pi (`python3-pyqt5.qtquick` and
+  the `qml-module-*` packages in `scripts/setup_pi.sh`), portrait **480x800** (Waveshare 5"
+  DSI panel rotated), touch-first, big targets. All logic lives in
+  `device/app/controller.py` (no visuals; tested in `tests/device/test_controller.py`);
+  `device/app/ui/qml/` only displays its properties and calls its slots
+  (`tests/device/test_qml.py` fails on any QML error). Bundled Inter font (OFL) and Lucide
+  icons (ISC) live next to the QML with their licences. No browser kiosk, no web stack.
 - **Performance budget:** under 2 s from face-in-frame to "Face matched" on the
   Pi 5 CPU (measure p50/p95 with `tools/bench_pi.py`).
 - Anti-spoofing is out of scope: keep the `LivenessCheck` interface + `NoOpLiveness`.
