@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Sign in · {{ app_name }}{% endblock %}
 {% block content %}
-<article class="login-card">
-  <hgroup>
-    <h1>Sign in</h1>
-    <p>Faculty and admin accounts only. Device PINs do not work here.</p>
-  </hgroup>
-  {% if error %}<div class="flash flash-error" role="alert">{{ error }}</div>{% endif %}
+<article class="auth-card">
+  <a href="/admin" class="brand">
+    <span class="logo">{{ icon('scan-face', 20) }}</span>
+    <span><strong>{{ app_name }}</strong><small>Admin dashboard</small></span>
+  </a>
+  <h1>Sign in</h1>
+  <p class="lede">Faculty and admin accounts only. Device PINs do not work here.</p>
+  {% if error %}<div class="flash flash-error" role="alert">{{ icon('info', 16) }}{{ error }}</div>{% endif %}
   <form method="post" action="/admin/login">
     <input type="hidden" name="csrf_token" value="{{ login_csrf }}">
     <input type="hidden" name="next" value="{{ next }}">
@@ -16,7 +18,7 @@
     <label>Password
       <input type="password" name="password" required autocomplete="current-password">
     </label>
-    <button type="submit">Sign in</button>
+    <button type="submit">Sign in {{ icon('arrow-right', 16) }}</button>
   </form>
 </article>
 {% endblock %}

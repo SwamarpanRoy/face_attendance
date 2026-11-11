@@ -6,7 +6,7 @@
   <h1>Faculty accounts</h1>
   <a href="/admin/faculty/new" role="button">Add account</a>
 </div>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Device PIN</th><th>Status</th></tr></thead>
   <tbody>
   {% for m in members %}
@@ -19,5 +19,5 @@
     </tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}

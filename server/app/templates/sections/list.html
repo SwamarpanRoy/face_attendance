@@ -5,7 +5,7 @@
   <h1>Sections</h1>
   {% if is_admin %}<a href="/admin/sections/new" role="button">Add section</a>{% endif %}
 </div>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>Section</th><th>Dept</th><th>Sem</th><th>Active students</th></tr></thead>
   <tbody>
   {% for section, students in rows %}
@@ -19,5 +19,5 @@
     <tr><td colspan="4" class="muted">No sections yet.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}

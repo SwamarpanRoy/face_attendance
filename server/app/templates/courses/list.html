@@ -5,7 +5,7 @@
   <h1>Courses</h1>
   {% if is_admin %}<a href="/admin/courses/new" role="button">Add course</a>{% endif %}
 </div>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>Code</th><th>Name</th><th>Dept</th><th>Sem</th><th>Taught to</th></tr></thead>
   <tbody>
   {% for c in courses %}
@@ -20,5 +20,5 @@
     <tr><td colspan="5" class="muted">No courses yet.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}

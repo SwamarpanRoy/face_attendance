@@ -15,7 +15,7 @@
   <article>
     <h3>Consent</h3>
     {% if consents %}
-      <table>
+      <div class="table-wrap"><table>
         <thead><tr><th>Given</th><th>Version</th><th>Method</th><th>Status</th></tr></thead>
         <tbody>
         {% for c in consents %}
@@ -27,7 +27,7 @@
           </tr>
         {% endfor %}
         </tbody>
-      </table>
+      </table></div>
     {% else %}
       <p class="muted">No consent recorded. Enrolment is not possible until consent is given (device or bulk CSV).</p>
     {% endif %}
@@ -36,7 +36,7 @@
   <article>
     <h3>Face templates ({{ templates|length }})</h3>
     {% if templates %}
-      <table>
+      <div class="table-wrap"><table>
         <thead><tr><th>Created</th><th>Source</th><th>Model</th><th>Quality</th></tr></thead>
         <tbody>
         {% for t in templates %}
@@ -48,7 +48,7 @@
           </tr>
         {% endfor %}
         </tbody>
-      </table>
+      </table></div>
     {% else %}
       <p class="muted">Not enrolled yet.</p>
     {% endif %}
@@ -73,7 +73,7 @@
 
 <h3>Attendance by course</h3>
 {% if history.per_course %}
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>Course</th><th>Held</th><th>Attended</th><th>Late</th><th>Excused</th><th>%</th></tr></thead>
   <tbody>
   {% for r in history.per_course %}
@@ -84,13 +84,13 @@
     </tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% else %}
 <p class="muted">No ended sessions for this section yet.</p>
 {% endif %}
 
 <h3>History</h3>
-<table>
+<div class="table-wrap"><table>
   <thead><tr><th>Date</th><th>Course</th><th>Faculty</th><th>Status</th><th>How</th><th>Time / score</th></tr></thead>
   <tbody>
   {% for row in history.rows %}
@@ -106,5 +106,5 @@
     <tr><td colspan="6" class="muted">No sessions yet.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}
