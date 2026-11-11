@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
 from common.schemas import (
@@ -142,13 +142,16 @@ def templates(
         .order_by(Student.usn)
     )
     if since is not None:
-        changed = (
+        new_templates = (
             select(FaceTemplate.student_id)
             .where(FaceTemplate.created_at > since)
             .distinct()
             .scalar_subquery()
         )
-        students_stmt = students_stmt.where(Student.id.in_(changed))
+        # New faces, or the same faces under changed details (name, USN, section).
+        students_stmt = students_stmt.where(
+            or_(Student.id.in_(new_templates), Student.updated_at > since)
+        )
     # populate_existing: refresh template collections even if this Session saw the student
     # earlier in the same transaction (long-lived sessions, tests).
     students = list(db.scalars(students_stmt.execution_options(populate_existing=True)))

@@ -20,6 +20,7 @@ from server.app.models import (
     Consent,
     ConsentMethod,
     FaceTemplate,
+    Section,
     TemplateSource,
     TemplateTombstone,
 )
@@ -327,3 +328,85 @@ def test_reembed_regenerates_templates_from_crops(db, settings, students, aligne
     )
     assert versions == ["new-model", "new-model"]
     assert stats.missing_crops == []
+
+
+def _edit_student(client, csrf, student, **changes):
+    form = {
+        "usn": student.usn,
+        "name": student.name,
+        "department": student.department,
+        "semester": str(student.semester),
+        "section_id": str(student.section_id or ""),
+        "active": "on" if student.active else "",
+        "csrf_token": csrf,
+    }
+    form.update(changes)
+    response = client.post(f"/admin/students/{student.id}", data=form)
+    assert response.status_code == 303, response.text
+
+
+def test_student_edits_reach_devices_on_the_next_incremental_sync(
+    client, db, device, faculty, admin, login, students, aligned_crops
+):
+    """Rename, USN change and moving section used to stay stale on devices forever."""
+    _, token = device
+    for student in students[:3]:
+        enrolled = client.post(
+            f"/api/v1/enrolment/{student.usn}/captures",
+            json=_payload(faculty.id, aligned_crops[:2], consent=True),
+            headers=_auth(token),
+        )
+        assert enrolled.status_code == 200
+    since = client.get("/api/v1/templates", headers=_auth(token)).json()["generated_at"]
+    csrf = login(admin.email)
+
+    def delta() -> dict:
+        return client.get("/api/v1/templates", params={"since": since}, headers=_auth(token)).json()
+
+    # 1. Rename: the student is re-sent with the new name and all templates, nothing deleted.
+    _edit_student(client, csrf, students[0], name="Aditi Rao")
+    feed = delta()
+    assert [(s["usn"], s["name"]) for s in feed["students"]] == [(students[0].usn, "Aditi Rao")]
+    assert len(feed["students"][0]["templates"]) == 2 and feed["deleted_usns"] == []
+
+    # 2. New USN: the old USN is deleted on the device, the student comes under the new one.
+    old_usn = students[1].usn
+    _edit_student(client, csrf, students[1], usn="1BM22EC099")
+    feed = delta()
+    assert old_usn in feed["deleted_usns"]
+    assert "1BM22EC099" in [s["usn"] for s in feed["students"]]
+
+    # 3. Moved to a section this device does not cache: dropped from the device.
+    other = Section(name="ECE-7B", department="ECE", semester=7)
+    db.add(other)
+    db.commit()
+    _edit_student(client, csrf, students[2], section_id=str(other.id))
+    feed = delta()
+    assert students[2].usn in feed["deleted_usns"]
+    assert students[2].usn not in [s["usn"] for s in feed["students"]]
+
+    # An edit that changes nothing does not resend anyone new.
+    since = client.get("/api/v1/templates", headers=_auth(token)).json()["generated_at"]
+    _edit_student(client, csrf, students[0])
+    assert delta()["students"] == [] and delta()["deleted_usns"] == []
+
+
+def test_roster_import_moving_a_student_tells_devices_to_drop_the_old_entry(
+    client, db, device, faculty, students, section, aligned_crops
+):
+    from server.app.services import roster
+
+    _, token = device
+    enrolled = client.post(
+        f"/api/v1/enrolment/{students[0].usn}/captures",
+        json=_payload(faculty.id, aligned_crops[:2], consent=True),
+        headers=_auth(token),
+    )
+    assert enrolled.status_code == 200
+    other = Section(name="ECE-7B", department="ECE", semester=7)
+    db.add(other)
+    db.commit()
+    csv_bytes = f"usn,name\n{students[0].usn},{students[0].name}\n".encode()
+    roster.import_roster_csv(db, other, csv_bytes, usn_pattern=r".+", actor_id=None)
+    tomb = db.scalar(select(TemplateTombstone).where(TemplateTombstone.usn == students[0].usn))
+    assert tomb is not None and tomb.section_id == section.id

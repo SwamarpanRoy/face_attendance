@@ -90,9 +90,13 @@ Everything the device caches for its assigned sections (`TemplatesOut`):
 - `full`: true when `since` was omitted; the device then replaces its whole cache.
 - `students[]`: `usn`, `name`, `section_id`, `templates[]` (`idx`, `embedding_b64` =
   512 float32 little-endian, `model_version`, `created_at`). With `since`, only
-  students whose templates changed after that time, each with *all* their templates.
+  students whose templates changed **or whose details changed** (name, USN, section;
+  `students.updated_at`) after that time, each with *all* their templates, so a renamed
+  student shows the new name on the device.
 - `deleted_usns[]`: students whose templates were removed after `since` (consent
-  withdrawal, re-enrolment); the device drops them.
+  withdrawal, re-enrolment), and the *old* USN of a student whose USN changed, who moved
+  to another section or was deactivated (a tombstone written by the edit or CSV import);
+  the device drops them before applying `students[]`.
 - `calibrated`, `threshold`, `margin`: the active calibration for `model_version`, or
   nulls while uncalibrated (device falls back to `device.toml` and shows a warning).
 

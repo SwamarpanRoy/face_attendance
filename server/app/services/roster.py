@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from server.app.models import Section, Student
-from server.app.services import audit
+from server.app.services import audit, enrolment
 
 
 @dataclass
@@ -84,11 +84,15 @@ def import_roster_csv(
             )
             result.created += 1
         else:
+            old_section_id, was_active = student.section_id, student.active
             student.name = name[:128]
             student.department = department[:64]
             student.semester = semester
             student.section_id = section.id
             student.active = True
+            enrolment.retire_device_identity(
+                db, student, old_usn=usn, old_section_id=old_section_id, was_active=was_active
+            )
             result.updated += 1
 
     audit.record(

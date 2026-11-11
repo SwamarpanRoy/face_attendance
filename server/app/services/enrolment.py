@@ -195,6 +195,38 @@ def store_templates(
     return StoredTemplates(consent=consent, templates=rows, total_templates=int(total or 0))
 
 
+def retire_device_identity(
+    db: Session,
+    student: Student,
+    *,
+    old_usn: str,
+    old_section_id: int | None,
+    was_active: bool,
+) -> bool:
+    """Tell devices to drop a student's old entry after an identity change. Adds, no commit.
+
+    Devices key cached templates by USN and only cache their assigned sections, so after
+    a USN change, a move to another section or deactivation the old entry would linger
+    (a second copy under the old USN, or recognition in a class the student left). A
+    tombstone for the *old* USN and section makes the next sync delete it; the student
+    under the new details is re-sent because ``updated_at`` changed.
+    """
+    changed = (
+        old_usn != student.usn
+        or old_section_id != student.section_id
+        or (was_active and not student.active)
+    )
+    if not changed:
+        return False
+    has_templates = db.scalar(
+        select(FaceTemplate.id).where(FaceTemplate.student_id == student.id).limit(1)
+    )
+    if has_templates is None:
+        return False
+    db.add(TemplateTombstone(usn=old_usn, section_id=old_section_id, deleted_at=datetime.now(UTC)))
+    return True
+
+
 def delete_templates(
     db: Session,
     settings: Settings,
