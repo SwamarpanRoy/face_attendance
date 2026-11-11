@@ -1,1 +1,1 @@
-"""PyQt5 screens for the 720x1280 portrait touch display (idle, session, live, enrol, settings)."""
+"""Device UI: the Qt Quick (QML) screens and their Python glue (video, loader)."""

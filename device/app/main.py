@@ -195,13 +195,15 @@ def sync_now(config: DeviceConfig, *, full: bool) -> int:
 
 def run_app(config: DeviceConfig, args: argparse.Namespace) -> int:
     from PyQt5.QtCore import QTimer
-    from PyQt5.QtWidgets import QApplication
+    from PyQt5.QtGui import QGuiApplication
+    from PyQt5.QtQml import QQmlApplicationEngine
 
+    from device.app.controller import EXIT_RESTART, DeviceController
     from device.app.feedback import Feedback
     from device.app.pins import PinVerifier
     from device.app.pipeline import PipelineWorker
     from device.app.session import SessionManager
-    from device.app.ui.main_window import EXIT_RESTART, MainWindow
+    from device.app.ui.app import load_ui
 
     try:
         engine = FaceEngine(config.models_dir, config.engine_config())
@@ -224,13 +226,13 @@ def run_app(config: DeviceConfig, args: argparse.Namespace) -> int:
     sessions = SessionManager(store, config, clock_synced=sysinfo.clock_synced)
     exit_code = {"code": 0}
 
-    app = QApplication(sys.argv[:1])
+    app = QGuiApplication(sys.argv[:1])
     worker = PipelineWorker(camera, engine, _empty_recognizer(config))
 
     def request_restart() -> None:
         exit_code["code"] = EXIT_RESTART
 
-    window = MainWindow(
+    controller = DeviceController(
         config=config,
         store=store,
         worker=worker,
@@ -243,8 +245,14 @@ def run_app(config: DeviceConfig, args: argparse.Namespace) -> int:
         on_matched_feedback=lambda outcome: feedback.matched(outcome.name or ""),
         on_restart=request_restart,
         show_capture_button=bool(args.sim and args.enrol_test),
-        fullscreen=args.fullscreen,
     )
+    controller.quitRequested.connect(app.quit)
+    ui = QQmlApplicationEngine()
+    try:
+        load_ui(ui, controller, fullscreen=args.fullscreen)
+    except RuntimeError as exc:
+        log.error("%s", exc)
+        return 2
 
     if args.enrol_test:
         usn, _, name = args.enrol_test.partition(":")
@@ -252,28 +260,29 @@ def run_app(config: DeviceConfig, args: argparse.Namespace) -> int:
         name = name.strip() or usn
 
         def store_test(capture: object) -> None:
-            window.store_test_template(capture.embedding, usn, name)  # type: ignore[attr-defined]
+            worker.capture_ready.disconnect(store_test)
+            controller.store_test_template(capture.embedding, usn, name)  # type: ignore[attr-defined]
             log.info("stored test template for %s (%s)", usn, name)
-            window.begin_test_mode()
+            controller.testRecognition()
 
         worker.capture_ready.connect(store_test)
         worker.request_capture()
-    window.showFullScreen() if args.fullscreen else window.show()
-    window.start_workers()
+    controller.start_workers()
     # Qt's event loop runs in C++, so Ctrl+C (SIGINT) or pkill/deploy (SIGTERM) would
     # otherwise land as KeyboardInterrupt inside a frame slot and abort the process
-    # without stopping the camera and sync threads. Close the window instead (same path
-    # as the close button); the timer gives Python a chance to run the handler.
+    # without stopping the camera and sync threads. Quit the event loop instead (same
+    # path as closing the window); the timer gives Python a chance to run the handler.
     for sig in (signal.SIGINT, signal.SIGTERM):
-        signal.signal(sig, lambda *_: window.close())
+        signal.signal(sig, lambda *_: app.quit())
     signal_wakeup = QTimer()
     signal_wakeup.timeout.connect(lambda: None)
     signal_wakeup.start(250)
     if args.exit_after:
-        QTimer.singleShot(int(args.exit_after * 1000), window.close)
+        QTimer.singleShot(int(args.exit_after * 1000), app.quit)
 
     code = app.exec_()
-    worker.stop()
+    del ui  # close the screens before the controller they bind to
+    controller.shutdown()
     if client is not None:
         client.close()
     store.close()

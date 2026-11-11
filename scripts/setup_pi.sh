@@ -8,7 +8,7 @@
 #   ./scripts/setup_pi.sh --tailscale --connect                    # on the Pi, optional extras
 #
 # What it does (each step is safe to re-run):
-#   1. apt packages: picamera2, PyQt5 (+ Wayland plugin), numpy, OpenCV (all from apt, never
+#   1. apt packages: picamera2, PyQt5 + Qt Quick/QML modules (+ Wayland plugin), numpy, OpenCV (all from apt, never
 #      pip), AI Camera firmware (imx500-all), git, rsync, espeak-ng
 #   2. uses the checkout the script runs from (or clones ~/face-attendance) and creates a
 #      --system-site-packages venv
@@ -54,6 +54,8 @@ say "apt packages"
 sudo apt-get update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
   python3-picamera2 python3-pyqt5 qtwayland5 python3-numpy python3-opencv python3-venv python3-pip \
+  python3-pyqt5.qtquick qml-module-qtquick2 qml-module-qtquick-window2 qml-module-qtquick-layouts \
+  qml-module-qtquick-shapes qml-module-qtgraphicaleffects \
   imx500-all git rsync espeak-ng libatlas3-base curl
 
 # ------------------------------------------------------------------ 2. repo + venv
@@ -89,7 +91,7 @@ fi
 .venv/bin/pip install --quiet --no-deps -e .
 sha256sum device/requirements.txt | cut -d' ' -f1 > .venv/.requirements.sha256
 .venv/bin/python - <<'EOF'
-import numpy, cv2, onnxruntime, PyQt5.QtCore, picamera2
+import numpy, cv2, onnxruntime, PyQt5.QtCore, PyQt5.QtQuick, picamera2
 print(f"numpy {numpy.__version__} (apt)  cv2 {cv2.__version__} (apt)  onnxruntime {onnxruntime.__version__} (pip)  Qt {PyQt5.QtCore.QT_VERSION_STR}")
 import numpy as np
 sess_ok = onnxruntime.get_available_providers()
@@ -171,7 +173,7 @@ for status in /sys/class/drm/card*-*/status; do
 done
 if [ -n "$display" ]; then pass display "connected:$display"
 else fail display "no connected DSI or HDMI display in /sys/class/drm"; fi
-if .venv/bin/python -c "import picamera2, PyQt5.QtWidgets, onnxruntime, cv2, numpy" 2>/dev/null; then pass venv "picamera2, PyQt5, onnxruntime, cv2, numpy import"; else fail venv "import error (see above)"; fi
+if .venv/bin/python -c "import picamera2, PyQt5.QtQuick, onnxruntime, cv2, numpy" 2>/dev/null; then pass venv "picamera2, PyQt5 + QtQuick, onnxruntime, cv2, numpy import"; else fail venv "import error (see above)"; fi
 SERVER_URL=$(grep -E '^url' "$HOME/.config/attendance/device.toml" | head -1 | sed 's/.*= *"\(.*\)".*/\1/')
 if curl -fsS --max-time 5 "$SERVER_URL/healthz" >/dev/null 2>&1; then pass server "$SERVER_URL reachable"; else fail server "$SERVER_URL not reachable (WiFi? server running? url in device.toml?)"; fi
 if [ "$(timedatectl show -p NTPSynchronized --value)" = "yes" ]; then pass ntp "clock synced"; else fail ntp "clock NOT synced (events will be flagged until it is)"; fi

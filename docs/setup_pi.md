@@ -142,7 +142,7 @@ ssh <PI_HOST> 'REPO_URL=<GIT_REMOTE> bash -s' < scripts/setup_pi.sh
 ssh <PI_HOST> 'bash -s -- --tailscale --connect' < scripts/setup_pi.sh    # optional extras
 ```
 
-It installs the apt packages (picamera2, PyQt5, numpy, OpenCV: **never pip** for
+It installs the apt packages (picamera2, PyQt5 with the Qt Quick/QML modules, numpy, OpenCV: **never pip** for
 these), clones the repo to `~/face-attendance`, creates the `--system-site-packages`
 venv, installs `device/requirements.txt`, verifies `onnxruntime` imports next to the
 system numpy, downloads the models, writes `~/.config/attendance/device.toml` from the
