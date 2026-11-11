@@ -1,193 +1,235 @@
-"""One look for the whole device UI, after shadcn/ui's "neutral" theme.
+"""Dark, camera-first look for the whole device UI (one Qt stylesheet + palette).
 
-shadcn/ui is React + Tailwind, which the device cannot run (PyQt5, 2 GB-class budget, no
-web stack), so its design tokens (near-black primary, white cards with a hairline border,
-8-12 px radii, pill badges, bordered alerts, grey muted text) are translated into a single
-Qt stylesheet here. Widgets only declare *what* they are through dynamic properties
-(``variant`` on buttons, ``tone`` on badges/alerts/banners, ``role`` on labels and frames)
-and this module decides how that looks, so colours live in one place instead of inline
-style strings scattered over the screens.
+Why dark: the device sits in bright classrooms and the camera preview is the hero of the
+Live screen; a near-black UI frames the video, keeps glare low on a small glossy panel
+and lets one status colour (green match, amber already-marked, red not-recognised) carry
+the meaning at a glance. The token names follow shadcn/ui (background, card, muted,
+primary, destructive), translated to Qt because the device runs PyQt5, not a web stack.
 
-Sizes (fonts, button heights) stay where the screens set them: the layout was measured to
-fit a 480x800 panel and the stylesheet must not change it, so it only adds colour, borders,
-radii and modest padding.
+Widgets only declare *what* they are through dynamic properties (``variant`` on buttons,
+``role`` and ``tone`` on labels and frames) and this module decides how that looks, so
+colours live in one place. Sizes are set by the screens (pixel fonts via :func:`font`)
+because the layout is measured to fit a 480x800 panel.
 """
 
 from __future__ import annotations
 
+from PyQt5.QtGui import QColor, QFont, QPalette
 from PyQt5.QtWidgets import QApplication, QWidget
 
-# shadcn "neutral" (light). Status colours are not part of the shadcn palette; these are
-# the Tailwind shades shadcn examples use (green/amber/red 600-700 on 50-100 tints).
 COLORS = {
-    "background": "#ffffff",
-    "foreground": "#0a0a0a",
-    "muted": "#f5f5f5",
-    "muted_foreground": "#737373",
-    "border": "#e5e5e5",
-    "ring": "#a3a3a3",
-    "primary": "#171717",
-    "primary_pressed": "#404040",
-    "primary_foreground": "#fafafa",
-    "secondary_pressed": "#e5e5e5",
-    # Slightly darker than shadcn's #ef4444 so white text stays readable on a small panel.
-    "destructive": "#dc2626",
-    "destructive_pressed": "#b91c1c",
-    "ok": "#15803d",
-    "ok_soft": "#f0fdf4",
-    "ok_border": "#bbf7d0",
-    "warn": "#b45309",
-    "warn_soft": "#fffbeb",
-    "warn_border": "#fde68a",
-    "error": "#b91c1c",
-    "error_soft": "#fef2f2",
-    "error_border": "#fecaca",
-    "video": "#0a0a0a",
+    "background": "#09090b",
+    "card": "#18181b",
+    "card_pressed": "#27272a",
+    "border": "#27272a",
+    "border_strong": "#3f3f46",
+    "foreground": "#fafafa",
+    "muted": "#a1a1aa",
+    "subtle": "#71717a",
+    "primary": "#fafafa",
+    "primary_foreground": "#09090b",
+    "primary_pressed": "#d4d4d8",
+    "ok": "#34d399",
+    "ok_solid": "#059669",
+    "warn": "#fbbf24",
+    "warn_solid": "#d97706",
+    "error": "#f87171",
+    "error_solid": "#dc2626",
 }
-
 _C = COLORS
 
 STYLESHEET = f"""
-QWidget {{
-    color: {_C["foreground"]};
-}}
-QMainWindow, QDialog, QStackedWidget > QWidget {{
-    background: {_C["background"]};
-}}
+QWidget {{ color: {_C["foreground"]}; }}
+QMainWindow, QDialog, QStackedWidget > QWidget {{ background: {_C["background"]}; }}
 
-/* Buttons: shadcn Button variants. Default = outline (white, hairline border). */
+/* ---------------------------------------------------------------- buttons */
 QPushButton {{
-    background: {_C["background"]};
+    background: {_C["card"]};
     color: {_C["foreground"]};
     border: 1px solid {_C["border"]};
-    border-radius: 8px;
-    padding: 0 12px;
+    border-radius: 16px;
+    padding: 0 16px;
 }}
-QPushButton:pressed {{ background: {_C["secondary_pressed"]}; }}
-QPushButton:disabled {{ color: {_C["ring"]}; border-color: {_C["muted"]}; }}
+QPushButton:pressed {{ background: {_C["card_pressed"]}; }}
+QPushButton:disabled {{ color: {_C["subtle"]}; }}
 QPushButton[variant="primary"] {{
     background: {_C["primary"]};
     color: {_C["primary_foreground"]};
-    border: 1px solid {_C["primary"]};
-    border-radius: 10px;
+    border: none;
+    border-radius: 20px;
 }}
 QPushButton[variant="primary"]:pressed {{ background: {_C["primary_pressed"]}; }}
-QPushButton[variant="destructive"] {{
-    background: {_C["destructive"]};
+QPushButton[variant="accent"] {{
+    background: {_C["ok_solid"]};
     color: #ffffff;
-    border: 1px solid {_C["destructive"]};
-    border-radius: 10px;
+    border: none;
+    border-radius: 20px;
 }}
-QPushButton[variant="destructive"]:pressed {{ background: {_C["destructive_pressed"]}; }}
-QPushButton[variant="secondary"] {{
-    background: {_C["muted"]};
-    border: 1px solid {_C["muted"]};
+QPushButton[variant="destructive"] {{
+    background: rgba(239, 68, 68, 0.14);
+    color: {_C["error"]};
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 18px;
 }}
-QPushButton[variant="secondary"]:pressed {{ background: {_C["secondary_pressed"]}; }}
+QPushButton[variant="destructive"]:pressed {{ background: rgba(239, 68, 68, 0.28); }}
+QPushButton[variant="ghost"] {{
+    background: transparent;
+    color: {_C["muted"]};
+    border: none;
+}}
+QPushButton[variant="ghost"]:pressed {{ color: {_C["foreground"]}; }}
+QPushButton[variant="key"] {{
+    background: {_C["card"]};
+    border: 1px solid {_C["border"]};
+    border-radius: 22px;
+}}
 
-/* Card: white, hairline border, rounded-xl. */
+/* ---------------------------------------------------------------- surfaces */
 QFrame[role="card"] {{
-    background: {_C["background"]};
+    background: {_C["card"]};
     border: 1px solid {_C["border"]};
-    border-radius: 12px;
+    border-radius: 18px;
 }}
-QFrame[role="card"] QLabel {{ border: none; background: transparent; }}
+QFrame[role="glass"] {{
+    background: rgba(9, 9, 11, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 18px;
+}}
+QFrame[role="card"] QLabel, QFrame[role="glass"] QLabel {{ background: transparent; border: none; }}
+QScrollArea[role="plain"], QScrollArea[role="plain"] > QWidget > QWidget {{
+    background: transparent; border: none;
+}}
+QFrame[role="step"] {{ background: {_C["border_strong"]}; border-radius: 2px; }}
+QFrame[role="step"][tone="active"] {{ background: {_C["foreground"]}; }}
 
-/* Text roles. */
-QLabel[role="muted"] {{ color: {_C["muted_foreground"]}; }}
-QLabel[role="caption"] {{ color: {_C["muted_foreground"]}; font-size: 10px; }}
+/* ---------------------------------------------------------------- text */
+QLabel[role="muted"] {{ color: {_C["muted"]}; }}
+QLabel[role="subtle"] {{ color: {_C["subtle"]}; }}
+QLabel[role="eyebrow"] {{ color: {_C["subtle"]}; font-weight: 600; }}
 QLabel[role="danger"] {{ color: {_C["error"]}; }}
-QLabel[role="code"] {{
-    background: {_C["muted"]};
-    border: 1px solid {_C["border"]};
-    border-radius: 8px;
-    padding: 8px;
-}}
+QLabel[role="caption"] {{ color: {_C["subtle"]}; font-size: 10px; }}
 
-/* Badge: rounded-full pill. */
+/* Pill badge with a status tone (server status, present counter). */
 QLabel[role="badge"] {{
-    border-radius: 11px;
-    padding: 3px 12px;
+    border-radius: 14px;
+    padding: 5px 12px;
     font-weight: 600;
-    border: 1px solid {_C["border"]};
-    background: {_C["muted"]};
+    color: {_C["muted"]};
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
 }}
 QLabel[role="badge"][tone="ok"] {{
-    color: {_C["ok"]}; background: {_C["ok_soft"]}; border-color: {_C["ok_border"]};
+    color: {_C["ok"]}; background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.35);
 }}
 QLabel[role="badge"][tone="warn"] {{
-    color: {_C["warn"]}; background: {_C["warn_soft"]}; border-color: {_C["warn_border"]};
+    color: {_C["warn"]}; background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.35);
 }}
 QLabel[role="badge"][tone="error"] {{
-    color: {_C["error"]}; background: {_C["error_soft"]}; border-color: {_C["error_border"]};
+    color: {_C["error"]}; background: rgba(239, 68, 68, 0.14);
+    border: 1px solid rgba(239, 68, 68, 0.35);
 }}
 
-/* Alert: bordered, rounded-lg, padded; empty alerts take no room. */
-QLabel[role="alert"] {{
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-weight: 600;
-}}
+/* Inline alert (Not calibrated, clock not synced). */
+QLabel[role="alert"] {{ border-radius: 14px; padding: 10px 14px; font-weight: 600; }}
 QLabel[role="alert"][tone="warn"] {{
-    color: {_C["warn"]}; background: {_C["warn_soft"]}; border: 1px solid {_C["warn_border"]};
+    color: {_C["warn"]}; background: rgba(245, 158, 11, 0.10);
+    border: 1px solid rgba(245, 158, 11, 0.30);
 }}
 QLabel[role="alert"][tone="error"] {{
-    color: {_C["error"]}; background: {_C["error_soft"]}; border: 1px solid {_C["error_border"]};
+    color: {_C["error"]}; background: rgba(239, 68, 68, 0.10);
+    border: 1px solid rgba(239, 68, 68, 0.30);
 }}
 
-/* Live banner: the one big status line, solid colours so it reads from a distance. */
-QLabel[role="banner"] {{ border-radius: 14px; padding: 12px; color: #ffffff; }}
-QLabel[role="banner"][tone="neutral"] {{ background: {_C["primary"]}; }}
-QLabel[role="banner"][tone="ok"] {{ background: {_C["ok"]}; }}
-QLabel[role="banner"][tone="warn"] {{ background: {_C["warn"]}; }}
-QLabel[role="banner"][tone="error"] {{ background: {_C["error"]}; }}
-
-QLabel[role="video"] {{
-    background: {_C["video"]};
-    color: {_C["muted_foreground"]};
-    border-radius: 12px;
+/* Live result card floating over the video. */
+QLabel[role="banner"] {{ border-radius: 20px; padding: 14px 18px; color: #ffffff; }}
+QLabel[role="banner"][tone="neutral"] {{
+    background: rgba(9, 9, 11, 0.72); border: 1px solid rgba(255, 255, 255, 0.12);
+}}
+QLabel[role="banner"][tone="ok"] {{
+    background: {_C["ok_solid"]}; border: 2px solid {_C["ok"]};
+}}
+QLabel[role="banner"][tone="warn"] {{
+    background: {_C["warn_solid"]}; border: 2px solid {_C["warn"]};
+}}
+QLabel[role="banner"][tone="error"] {{
+    background: {_C["error_solid"]}; border: 2px solid {_C["error"]};
 }}
 
-/* Lists (course, section, period, roster): bordered card, roomy rows. */
-QListWidget {{
-    background: {_C["background"]};
-    border: 1px solid {_C["border"]};
-    border-radius: 12px;
-    padding: 4px;
-    outline: 0;
-}}
+QLabel[role="video"] {{ background: #000000; color: {_C["subtle"]}; }}
+QLabel[role="video"][tone="rounded"] {{ border-radius: 20px; }}
+
+/* ---------------------------------------------------------------- lists */
+QListWidget {{ background: transparent; border: none; outline: 0; }}
 QListWidget::item {{
-    padding: 14px;
-    border-radius: 8px;
-    margin: 2px 0;
+    background: {_C["card"]};
+    border: 1px solid {_C["border"]};
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin: 0 0 8px 0;
+    color: {_C["foreground"]};
 }}
 QListWidget::item:selected {{
     background: {_C["primary"]};
     color: {_C["primary_foreground"]};
+    border: 1px solid {_C["primary"]};
 }}
 
-/* Inputs: PIN display, USN filter. (QComboBox keeps Fusion's own frame: a stylesheet
-   border on it makes Qt drop the native drop-down arrow.) */
+/* ---------------------------------------------------------------- inputs */
 QLineEdit {{
-    background: {_C["background"]};
+    background: {_C["card"]};
     border: 1px solid {_C["border"]};
-    border-radius: 8px;
-    padding: 6px 10px;
+    border-radius: 14px;
+    padding: 8px 12px;
 }}
-QLineEdit:focus {{ border: 1px solid {_C["ring"]}; }}
-
-QTextBrowser, QTextEdit, QPlainTextEdit {{
-    background: {_C["muted"]};
+QLineEdit[role="pin"] {{ background: transparent; border: none; }}
+QTextEdit, QPlainTextEdit, QTextBrowser {{
+    background: {_C["card"]};
     border: 1px solid {_C["border"]};
-    border-radius: 10px;
-    padding: 8px;
+    border-radius: 16px;
+    padding: 12px;
 }}
+QScrollBar:vertical {{ background: transparent; width: 6px; margin: 4px 0; }}
+QScrollBar::handle:vertical {{ background: {_C["border_strong"]}; border-radius: 3px; }}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: none; }}
 """
+
+
+def font(px: int, weight: int = QFont.Normal) -> QFont:
+    """Pixel-sized font, so text is the same size on any panel DPI."""
+    result = QFont("Sans")
+    result.setPixelSize(px)
+    result.setWeight(weight)
+    return result
+
+
+def _palette() -> QPalette:
+    """Dark palette for what the stylesheet does not reach (combo popups, selections)."""
+    palette = QPalette()
+    for role, color in (
+        (QPalette.Window, _C["background"]),
+        (QPalette.WindowText, _C["foreground"]),
+        (QPalette.Base, _C["card"]),
+        (QPalette.AlternateBase, _C["card_pressed"]),
+        (QPalette.Text, _C["foreground"]),
+        (QPalette.Button, _C["card"]),
+        (QPalette.ButtonText, _C["foreground"]),
+        (QPalette.Highlight, _C["primary"]),
+        (QPalette.HighlightedText, _C["primary_foreground"]),
+        (QPalette.ToolTipBase, _C["card"]),
+        (QPalette.ToolTipText, _C["foreground"]),
+        (QPalette.PlaceholderText, _C["subtle"]),
+    ):
+        palette.setColor(role, QColor(color))
+    return palette
 
 
 def apply(app: QApplication) -> None:
     """Install the theme for every window and dialog the app creates."""
     app.setStyle("Fusion")  # same rendering on the Pi and the laptop simulator
+    app.setPalette(_palette())
     app.setStyleSheet(STYLESHEET)
 
 

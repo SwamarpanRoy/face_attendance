@@ -37,7 +37,7 @@ from device.app.enrol import Capture, EnrolmentFlow
 from device.app.pins import FacultyRef
 from device.app.pipeline import PipelineWorker, annotate
 from device.app.ui.pinpad import BUTTON_HEIGHT, NumberPad
-from device.app.ui.theme import set_props
+from device.app.ui.theme import font, set_props
 
 log = logging.getLogger(__name__)
 CAPTURE_GAP_MS = 700
@@ -45,7 +45,7 @@ CAPTURE_GAP_MS = 700
 
 def _big(button: QPushButton) -> QPushButton:
     button.setMinimumHeight(BUTTON_HEIGHT)
-    button.setFont(QFont("Sans", 14))
+    button.setFont(font(16, QFont.Medium))
     return button
 
 
@@ -94,7 +94,7 @@ class EnrolDialog(QDialog):
     def _build_pick_page(self) -> QWidget:
         page = QWidget()
         title = QLabel("Pick the student")
-        title.setFont(QFont("Sans", 16, QFont.Bold))
+        title.setFont(font(24, QFont.Bold))
         self.section_box = QComboBox()
         self.section_box.setMinimumHeight(48)
         self.section_box.currentIndexChanged.connect(lambda _i: self._load_roster())
@@ -102,7 +102,7 @@ class EnrolDialog(QDialog):
         self.search_pad.changed.connect(self._filter_roster)
         self.search_pad.submitted.connect(lambda _t: self._choose_highlighted())
         self.roster_list = QListWidget()
-        self.roster_list.setFont(QFont("Sans", 13))
+        self.roster_list.setFont(font(15, QFont.Medium))
         self.roster_list.itemClicked.connect(lambda item: self._choose(item))
         hint = QLabel("Type the last digits of the USN, or tap a name.")
         hint.setWordWrap(True)
@@ -122,10 +122,10 @@ class EnrolDialog(QDialog):
     def _build_consent_page(self) -> QWidget:
         page = QWidget()
         self.consent_title = QLabel("Consent")
-        self.consent_title.setFont(QFont("Sans", 16, QFont.Bold))
+        self.consent_title.setFont(font(24, QFont.Bold))
         self.consent_text = QTextEdit()
         self.consent_text.setReadOnly(True)
-        self.consent_text.setFont(QFont("Sans", 12))
+        self.consent_text.setFont(font(15))
         self.consent_version_label = QLabel("")
         set_props(self.consent_version_label, role="muted")
         agree = _big(QPushButton("I consent"))
@@ -147,17 +147,17 @@ class EnrolDialog(QDialog):
     def _build_capture_page(self) -> QWidget:
         page = QWidget()
         self.capture_title = QLabel("Look at the camera")
-        self.capture_title.setFont(QFont("Sans", 16, QFont.Bold))
+        self.capture_title.setFont(font(24, QFont.Bold))
         self.capture_title.setAlignment(Qt.AlignCenter)
         self.video = QLabel("")
         self.video.setAlignment(Qt.AlignCenter)
         self.video.setMinimumHeight(300)
         # Same reason as LiveScreen.video: the preview must not dictate the dialog size.
         self.video.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        set_props(self.video, role="video")
+        set_props(self.video, role="video", tone="rounded")
         self.capture_status = QLabel("")
         self.capture_status.setAlignment(Qt.AlignCenter)
-        self.capture_status.setFont(QFont("Sans", 14))
+        self.capture_status.setFont(font(18, QFont.DemiBold))
         cancel = _big(QPushButton("Cancel"))
         cancel.clicked.connect(self.reject)
         layout = QVBoxLayout()
@@ -171,7 +171,7 @@ class EnrolDialog(QDialog):
     def _build_done_page(self) -> QWidget:
         page = QWidget()
         self.done_title = QLabel("")
-        self.done_title.setFont(QFont("Sans", 16, QFont.Bold))
+        self.done_title.setFont(font(24, QFont.Bold))
         self.done_title.setAlignment(Qt.AlignCenter)
         self.done_text = QLabel("")
         self.done_text.setWordWrap(True)

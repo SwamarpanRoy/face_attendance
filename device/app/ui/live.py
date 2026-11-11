@@ -1,7 +1,11 @@
-"""Live recognition screen: camera preview, result banner, counters, big buttons.
+"""Live recognition screen, camera-first: full-bleed preview with floating glass overlays.
 
-Portrait 720x1280 on the Pi's touch display; the simulator shows it at half size. All
-heavy work happens in :class:`PipelineWorker`; this widget only paints frames and
+The video fills the screen edge to edge; the course line and present counter float on a
+glass bar at the top and the result card ("Face matched – Name (USN)") floats over the
+bottom of the video, so the camera stays the biggest thing on a 480x800 panel. Overlays
+share the video's grid cell (later widgets paint on top), which needs no manual geometry.
+
+All heavy work happens in :class:`PipelineWorker`; this widget only paints frames and
 reacts to signals. Recording a match is the controller's job (``matched`` signal), so
 this screen is the same whether a real session is running or the device is in
 "test recognition" mode.
@@ -16,6 +20,8 @@ import cv2
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QImage, QPixmap
 from PyQt5.QtWidgets import (
+    QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -29,7 +35,7 @@ from common.face.matcher import Outcome
 from common.face.types import Array
 from device.app.enrol import Capture
 from device.app.pipeline import PipelineWorker, annotate
-from device.app.ui.theme import set_props
+from device.app.ui.theme import font, set_props
 
 log = logging.getLogger(__name__)
 
@@ -38,14 +44,13 @@ BANNER_TONES = ("neutral", "ok", "warn", "error")
 
 
 class Banner(QLabel):
-    """Large status line that can hold a message for a while, then fall back."""
+    """Result card that can hold a message for a while, then fall back."""
 
     def __init__(self) -> None:
         super().__init__("")
         self.setAlignment(Qt.AlignCenter)
         self.setWordWrap(True)
-        self.setMinimumHeight(110)
-        self.setFont(QFont("Sans", 20, QFont.Bold))
+        self.setFont(font(20, QFont.Bold))
         self._hold = QTimer(self)
         self._hold.setSingleShot(True)
         self._hold.timeout.connect(self._release)
@@ -57,6 +62,7 @@ class Banner(QLabel):
             self._fallback = (text, kind)  # remember, show after the held message
             return
         self.setText(text)
+        self.setVisible(bool(text))  # no empty glass card over the video
         set_props(self, role="banner", tone=kind if kind in BANNER_TONES else "neutral")
         if hold_ms:
             self._hold.start(hold_ms)
@@ -64,6 +70,16 @@ class Banner(QLabel):
     def _release(self) -> None:
         text, kind = self._fallback
         self.show_message(text, kind)
+
+
+def _overlay(widget: QWidget, *, top: bool) -> QWidget:
+    """Transparent holder that insets an overlay from the video's edges."""
+    holder = QWidget()
+    layout = QVBoxLayout()
+    layout.setContentsMargins(12, 12 if top else 0, 12, 0 if top else 12)
+    layout.addWidget(widget)
+    holder.setLayout(layout)
+    return holder
 
 
 class LiveScreen(QWidget):
@@ -78,16 +94,30 @@ class LiveScreen(QWidget):
         self.present = 0
         self.total = 0
 
+        # ---- top glass bar: what is running + how many are in
         self.header = QLabel("")
-        self.header.setFont(QFont("Sans", 13))
-        self.header.setAlignment(Qt.AlignCenter)
+        self.header.setFont(font(13, QFont.Medium))
         # Long one-line labels set the minimum width of the whole window (the stacked
         # pages share one size), so they must wrap: on a 480 px panel the header
         # "22EC72 Embedded Systems · ECE-7A · Period 6 15:00–16:00 · …" alone needed 660 px.
         self.header.setWordWrap(True)
-        set_props(self.header, role="muted")
+        self.counter = QLabel("0 present")
+        self.counter.setFont(font(14, QFont.Bold))
+        self.counter.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        set_props(self.counter, role="badge", tone="ok")
+        bar = QFrame()
+        set_props(bar, role="glass")
+        bar_layout = QHBoxLayout()
+        bar_layout.setContentsMargins(14, 10, 10, 10)
+        bar_layout.setSpacing(10)
+        bar_layout.addWidget(self.header, stretch=1)
+        bar_layout.addWidget(self.counter, alignment=Qt.AlignVCenter)
+        bar.setLayout(bar_layout)
+
+        # ---- the camera, full bleed
         self.video = QLabel("Starting camera…")
         self.video.setAlignment(Qt.AlignCenter)
+        self.video.setFont(font(15))
         # A QLabel holding a pixmap insists on at least the pixmap's size, and the pixmap
         # is scaled to the label's current size: with the default policy the preview
         # pins the whole window at its current size (or larger), which pushed the UI off
@@ -96,10 +126,18 @@ class LiveScreen(QWidget):
         self.video.setMinimumSize(160, 120)
         set_props(self.video, role="video")
         self.banner = Banner()
-        self.counter = QLabel("Present: 0")
-        self.counter.setFont(QFont("Sans", 15, QFont.Bold))
+
+        stage = QWidget()
+        stage_layout = QGridLayout()
+        stage_layout.setContentsMargins(0, 0, 0, 0)
+        stage_layout.addWidget(self.video, 0, 0)
+        stage_layout.addWidget(_overlay(bar, top=True), 0, 0, Qt.AlignTop)
+        stage_layout.addWidget(_overlay(self.banner, top=False), 0, 0, Qt.AlignBottom)
+        stage.setLayout(stage_layout)
+
+        # ---- below the video
         self.recent = QLabel("")
-        self.recent.setFont(QFont("Sans", 11))
+        self.recent.setFont(font(13))
         self.recent.setWordWrap(True)
         set_props(self.recent, role="muted")
         self.stats = QLabel("")
@@ -107,26 +145,32 @@ class LiveScreen(QWidget):
         self.stats.setWordWrap(True)  # updated from startup, even while hidden
 
         self.capture_button = QPushButton("Capture test template")
-        self.capture_button.setMinimumHeight(56)
+        self.capture_button.setMinimumHeight(64)
+        self.capture_button.setFont(font(15, QFont.Medium))
         self.capture_button.clicked.connect(self._capture_clicked)
         self.capture_button.setVisible(show_capture_button)
         self.end_button = QPushButton("End session")
         self.end_button.setMinimumHeight(64)
-        self.end_button.setFont(QFont("Sans", 14, QFont.Bold))
+        self.end_button.setFont(font(17, QFont.DemiBold))
         set_props(self.end_button, variant="destructive")
         self.end_button.clicked.connect(self.end_requested)
-
         buttons = QHBoxLayout()
+        buttons.setSpacing(12)
         buttons.addWidget(self.capture_button)
         buttons.addWidget(self.end_button)
+
+        footer = QVBoxLayout()
+        footer.setContentsMargins(16, 12, 16, 16)
+        footer.setSpacing(8)
+        footer.addWidget(self.recent)
+        footer.addWidget(self.stats)
+        footer.addLayout(buttons)
+
         layout = QVBoxLayout()
-        layout.addWidget(self.header)
-        layout.addWidget(self.video, stretch=6)
-        layout.addWidget(self.banner)
-        layout.addWidget(self.counter)
-        layout.addWidget(self.recent)
-        layout.addWidget(self.stats)
-        layout.addLayout(buttons)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(stage, stretch=1)
+        layout.addLayout(footer)
         self.setLayout(layout)
 
         worker.frame_ready.connect(self.on_frame)
@@ -149,7 +193,7 @@ class LiveScreen(QWidget):
 
     def _refresh_counters(self) -> None:
         total = f" / {self.total}" if self.total else ""
-        self.counter.setText(f"Present: {self.present}{total}")
+        self.counter.setText(f"{self.present}{total} present")
         self.recent.setText("Recent: " + " · ".join(self.marked) if self.marked else "")
 
     # ------------------------------------------------------------------ slots
@@ -161,8 +205,12 @@ class LiveScreen(QWidget):
         rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
         height, width, _ = rgb.shape
         image = QImage(rgb.data, width, height, 3 * width, QImage.Format_RGB888).copy()
+        # Fill the stage (crop the overflow) rather than letterbox: full-bleed camera.
         pixmap = QPixmap.fromImage(image).scaled(
-            self.video.width(), self.video.height(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            self.video.width(),
+            self.video.height(),
+            Qt.KeepAspectRatioByExpanding,
+            Qt.SmoothTransformation,
         )
         self.video.setPixmap(pixmap)
 
@@ -177,7 +225,7 @@ class LiveScreen(QWidget):
             self.marked.appendleft(f"{outcome.name} ({outcome.usn})")
             self._refresh_counters()
             self.banner.show_message(
-                f"Face matched – {outcome.name} ({outcome.usn})", "ok", hold_ms=2500
+                f"✓  Face matched – {outcome.name} ({outcome.usn})", "ok", hold_ms=2500
             )
             log.info("matched %s score=%.3f", outcome.usn, outcome.score or 0.0)
             self.matched.emit(outcome)

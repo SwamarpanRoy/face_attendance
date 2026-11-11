@@ -223,3 +223,20 @@ def test_long_runtime_texts_wrap_instead_of_widening_the_window(world):
     window.idle.network_label.setText("WiFi: a-rather-long-hotspot-name   IP: 10.153.42.104")
     # Margin for the Pi's wider desktop font: 480 px panel, stay well under it here.
     assert window.minimumSizeHint().width() <= 420, window.minimumSizeHint().width()
+
+
+def test_every_screen_fits_a_480x800_panel_with_long_settings(world):
+    """Height too: the Settings table with Pi-length paths needed 736 of 800 px."""
+    window, _, _ = world
+    window.settings.show_info(
+        {
+            **{f"Row {i}": "value" for i in range(12)},
+            "Config": "/home/raspberrypi/.config/attendance/device.toml",
+            "Database": "/home/raspberrypi/.local/state/attendance/device.db",
+        },
+        calibrated=False,
+    )
+    window.idle.show_status(None, calibrated=False, clock_synced=False)  # both warnings
+    need = window.minimumSizeHint()
+    # Margin for the Pi's fonts and the window frame.
+    assert need.width() <= 440 and need.height() <= 740, (need.width(), need.height())

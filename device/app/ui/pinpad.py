@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import (
 )
 
 from device.app.pins import FacultyRef, PinLockedError, PinVerifier
-from device.app.ui.theme import set_props
+from device.app.ui.theme import font, set_props
 
 BUTTON_HEIGHT = 64
 
@@ -36,8 +36,11 @@ class NumberPad(QWidget):
         self.display = QLineEdit()
         self.display.setReadOnly(True)
         self.display.setAlignment(Qt.AlignCenter)
-        self.display.setFont(QFont("Sans", 22, QFont.Bold))
+        pin_font = font(30, QFont.Bold)
+        pin_font.setLetterSpacing(QFont.AbsoluteSpacing, 8)
+        self.display.setFont(pin_font)
         self.display.setMinimumHeight(56)
+        set_props(self.display, role="pin")
         if masked:
             self.display.setEchoMode(QLineEdit.Password)
 
@@ -46,11 +49,14 @@ class NumberPad(QWidget):
         for index, label in enumerate(labels):
             button = QPushButton(label)
             button.setMinimumHeight(BUTTON_HEIGHT)
-            button.setFont(QFont("Sans", 18))
+            button.setFont(font(26, QFont.Normal))
             if label == "OK":
+                button.setFont(font(20, QFont.Bold))
                 set_props(button, variant="primary")
             elif label == "⌫":
-                set_props(button, variant="secondary")
+                set_props(button, variant="ghost")
+            else:
+                set_props(button, variant="key")
             button.clicked.connect(lambda _checked, value=label: self._press(value))
             grid.addWidget(button, index // 3, index % 3)
         layout = QVBoxLayout()
@@ -100,16 +106,19 @@ class PinDialog(QDialog):
         self.result_ref: FacultyRef | None = None
 
         self.heading = QLabel(title)
-        self.heading.setFont(QFont("Sans", 16, QFont.Bold))
+        self.heading.setFont(font(24, QFont.Bold))
         self.heading.setAlignment(Qt.AlignCenter)
         self.message = QLabel("Enter your PIN")
         self.message.setAlignment(Qt.AlignCenter)
         self.message.setWordWrap(True)
+        self.message.setFont(font(15))
         set_props(self.message, role="muted")
         self.pad = NumberPad(max_length=12, masked=True)
         self.pad.submitted.connect(self._submit)
         cancel = QPushButton("Cancel")
         cancel.setMinimumHeight(BUTTON_HEIGHT)
+        cancel.setFont(font(16, QFont.Medium))
+        set_props(cancel, variant="ghost")
         cancel.clicked.connect(self.reject)
 
         row = QHBoxLayout()
