@@ -80,6 +80,24 @@ stranger). It is skipped when `models/` is empty.
 
 Pi 5 numbers come from `tools/bench_pi.py` (M8); the budget is 2 s end to end.
 
+**Measured on the Pi 5 (16 GB, AI Camera, 2026-11-14)**: `bench_pi.py --iterations 300`
+with a person in view, detector input 320, 4 threads, 6,000-template synthetic gallery:
+
+| stage | p50 ms | p95 ms | frames |
+|---|---|---|---|
+| capture | 1.8 | 18.2 | 300 |
+| detect | 16.9 | 18.6 | 300 |
+| align | 0.7 | 1.2 | 167 |
+| embed | 23.7 | 27.9 | 167 |
+| match | 2.9 | 3.5 | 167 |
+| **total** | **46.9** | **51.8** | 167 |
+
+167/300 frames passed the quality gates; model load 38 ms; CPU 63.4 °C at the end,
+`throttled=0x0`. The capture p95 is the wait for the next 30 fps frame.
+
+**Idle temperature** (10 min on the Idle screen, from 49.4 °C): 70.8 °C with the pipeline
+always running (18,979 frames), 50.5 °C with the idle pause (no frames on Idle).
+
 ## Laptop simulator
 
 ```
