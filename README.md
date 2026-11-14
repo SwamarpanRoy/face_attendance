@@ -160,7 +160,7 @@ Pinned per component because the three environments differ:
 | M5 | Calibration: `capture_probes.py` + `calibrate.py` from scratch; threshold/margin stored on the server and delivered to devices | **done** |
 | M6 | Full device app: sessions, live screen, voting/cooldown, outbox, prefetch of all assigned sections, offline catalog and PINs, sync, heartbeat | **done** |
 | M7 | Admin UI: dashboard, live view, edit with reason + audit, student history, reports + CSV/XLSX, devices, audit log | **done** |
-| M8 | Pi port and performance: `bench_pi.py`, tuning, autostart + crash recovery | bench, autostart, wrapper and idle pause written; **measure on the Pi** |
+| M8 | Pi port and performance: `bench_pi.py`, tuning, autostart + crash recovery | **measured on the Pi 5**: p95 52 ms end to end; idle pause keeps it at ~50 °C; autostart + crash recovery to verify with M1 |
 | M9 | Hardening and demo: security pass, backups, `docs/operations.md`, demo script | **done** |
 
 ## Hard constraints

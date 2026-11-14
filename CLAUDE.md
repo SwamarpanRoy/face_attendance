@@ -5,9 +5,11 @@ sessions. Read it before changing anything.
 
 ## Status
 
-All milestones that can be built without hardware are done (M0, M2 to M7, M9). The
-Pi-side pieces of M1 and M8 are written but unverified: run `docs/setup_pi.md`, then
-`Pi: deploy`, `--selftest` and `tools/bench_pi.py` on the real Pi and fix what it reveals.
+All milestones that can be built without hardware are done (M0, M2 to M7, M9). M8 is
+measured on the Pi 5 (bench p95 52 ms; idle pause verified, docs/recognition.md); its
+autostart and crash-recovery check is deferred together with M1 (autostart, deploy). The
+team chose not to enable SSH on the Pi for now, so `deploy.py` is unused: updates are
+`git pull` on the Pi's own screen. Real calibration (M5 data) is still pending.
 Milestone table: README.md. Per-area docs: `docs/`.
 
 **Actual hardware (2026-10):** Raspberry Pi 5 16 GB, Raspberry Pi AI Camera (IMX500,

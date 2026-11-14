@@ -313,8 +313,8 @@ Each phase lists its goal, tasks, deliverable and "done when" check. The phases 
 
 ### Phase 10: Pi port and performance (Weeks 9–10)
 
-- [ ] Run the full app on the Pi. Run `bench_pi.py` to get p50/p95 for each stage and end-to-end.
-- [ ] Tune the detector input size, thread count and preview resolution until **p95 is under 2 s**.
+- [x] Run the full app on the Pi. Run `bench_pi.py` to get p50/p95 for each stage and end-to-end. *(Pi 5: total p50 46.9 ms / p95 51.8 ms, see docs/recognition.md)*
+- [x] Tune the detector input size, thread count and preview resolution until **p95 is under 2 s**. *(defaults already meet it: input 320, 4 threads)*
 - [ ] Check for thermal throttling (`vcgencmd get_throttled`) during a 30-minute run. Add a fan if needed.
 - [ ] Check autostart, crash restart, and recovery after a reboot or WiFi loss.
 
