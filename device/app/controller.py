@@ -319,7 +319,10 @@ class DeviceController(QObject):
         if screen != self._screen:
             self._screen = screen
             self.screenChanged.emit()
-        if screen not in ("live", "enrol"):
+        showing_video = screen in ("live", "enrol")
+        # Only the live and enrol screens use the camera; elsewhere the pipeline sleeps.
+        self.worker.set_paused(not showing_video)
+        if not showing_video:
             self.video.clear()
 
     # ================================================================== idle

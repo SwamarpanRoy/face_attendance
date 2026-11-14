@@ -82,14 +82,34 @@ class PipelineWorker(QThread):
         self._stop = threading.Event()
         self._capture_requested = threading.Event()
         self._suppress_outcomes = threading.Event()
+        # Paused while no screen shows video (idle, settings, PIN): running both networks
+        # at ~30 fps with nobody looking only heats the Pi. ``_wake`` ends a pause early.
+        self._paused = threading.Event()
+        self._wake = threading.Event()
         self._stats_every_s = stats_every_s
         self._pending_recognizer: Recognizer | None = None
         self.frames_seen = 0
 
     # -- UI thread API
     def request_capture(self) -> None:
-        """Ask for the next good embedding to be emitted on ``capture_ready``."""
+        """Ask for the next good embedding to be emitted on ``capture_ready``.
+
+        A capture is served even while paused, so it never waits for a screen change.
+        """
         self._capture_requested.set()
+        self._wake.set()
+
+    def set_paused(self, paused: bool) -> None:
+        """Stop or resume processing frames; the camera itself keeps streaming."""
+        if paused:
+            self._paused.set()
+        else:
+            self._paused.clear()
+            self._wake.set()
+
+    @property
+    def paused(self) -> bool:
+        return self._paused.is_set()
 
     def set_suppress_outcomes(self, suppress: bool) -> None:
         """While enrolling, frames are shown but not matched (no banners, no marks)."""
@@ -100,6 +120,7 @@ class PipelineWorker(QThread):
 
     def stop(self, timeout_ms: int = 3000) -> None:
         self._stop.set()
+        self._wake.set()
         if self.isRunning():
             self.wait(timeout_ms)
 
@@ -120,6 +141,10 @@ class PipelineWorker(QThread):
                 if self._pending_recognizer is not None:
                     self.recognizer = self._pending_recognizer
                     self._pending_recognizer = None
+                if self._paused.is_set() and not self._capture_requested.is_set():
+                    self._wake.wait(0.25)
+                    self._wake.clear()
+                    continue
                 frame = self.camera.read()
                 if frame is None:
                     time.sleep(0.02)
