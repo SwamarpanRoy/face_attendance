@@ -35,6 +35,12 @@ enrolment are pages, not blocking dialogs: an action that needs a PIN continues 
 valid one is entered; Cancel returns to where you were. Camera frames are annotated and
 downsized once by the controller and drawn by `VideoSurface` (`device/app/ui/video.py`).
 
+**Idle pause.** Detection and recognition run only while a screen shows the camera (Live,
+camera and recognition tests, Enrol). On Idle, Start session, PIN and Settings the worker
+sleeps and the camera keeps streaming without being read, so the CPU stays cool between
+classes and Live opens without a camera restart. An enrolment capture is still served
+while paused.
+
 **Look.** Dark and calm: a near-black gradient, depth from soft shadows, the Inter font
 (bundled, OFL) and Lucide icons (ISC). Live is camera-first: the video fills the
 screen, and the top bar (course, section · period, "X/Y present") and the result card are

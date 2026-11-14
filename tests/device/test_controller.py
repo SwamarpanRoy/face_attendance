@@ -136,6 +136,23 @@ def test_live_frames_reach_the_video_sink_only_on_live(world):
     assert device.videoSink.image().isNull()
 
 
+def test_pipeline_sleeps_unless_a_screen_shows_video(world):
+    device, _, worker = world
+    assert device.screen == "idle" and worker.paused  # no inference on the idle screen
+    device.testCamera()
+    assert not worker.paused
+    seen = worker.frames_seen
+    wait(lambda: worker.frames_seen > seen + 3)
+    device.openSettings()  # PIN screen: camera not shown
+    assert device.screen == "pin" and worker.paused
+    device.show_idle()
+    assert worker.paused
+    wait(lambda: False, 100)  # a frame already in flight may still finish
+    seen = worker.frames_seen
+    wait(lambda: False, 300)
+    assert worker.frames_seen == seen
+
+
 def test_enrolment_runs_consent_capture_upload_and_closes(world):
     device, store, _ = world
     store.set_setting("consent_version", "2026-11-v1")

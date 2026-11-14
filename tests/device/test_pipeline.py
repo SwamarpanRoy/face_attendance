@@ -138,6 +138,50 @@ def test_swap_recognizer_takes_effect_between_frames(qapp):
     assert any(o.kind == "matched" and o.usn == "1BM22EC002" for o in outcomes)
 
 
+def _spin(done, timeout_ms: int = 3000) -> None:
+    loop = QEventLoop()
+    QTimer.singleShot(timeout_ms, loop.quit)
+    poll = QTimer()
+    poll.timeout.connect(lambda: loop.quit() if done() else None)
+    poll.start(20)
+    loop.exec_()
+    poll.stop()
+
+
+def test_paused_worker_processes_no_frames_but_still_serves_a_capture(qapp):
+    identity = _unit(5)
+    engine = FakeEngine(identity)
+    worker = PipelineWorker(
+        ImageSource(FIXTURE, fps=200),
+        engine,
+        Recognizer(TemplateIndex([Template("1BM22EC003", "Bhavna", identity)]), MatchConfig(0.5)),
+    )
+    captured, outcomes = [], []
+    worker.capture_ready.connect(captured.append)
+    worker.outcome_ready.connect(outcomes.append)
+    worker.set_paused(True)
+    assert worker.paused
+    worker.start()
+    try:
+        _spin(lambda: False, 400)
+        assert engine.calls == 0 and worker.frames_seen == 0  # idle: no inference at all
+
+        worker.request_capture()  # e.g. enrolment asks while paused
+        _spin(lambda: bool(captured))
+        assert captured and np.array_equal(captured[0].embedding, identity)
+        calls_after_capture = engine.calls
+        _spin(lambda: False, 300)
+        assert engine.calls == calls_after_capture  # back to sleep once served
+        assert not outcomes
+
+        worker.set_paused(False)  # live screen opened
+        _spin(lambda: any(o.kind == "matched" for o in outcomes))
+        assert any(o.kind == "matched" for o in outcomes)
+    finally:
+        worker.stop()
+    assert not worker.isRunning()
+
+
 def test_camera_failure_is_reported_not_raised(qapp):
     worker = PipelineWorker(
         ImageSource(Path("does/not/exist.jpg")),
